@@ -2,6 +2,10 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#ifndef M_PI
+    #define M_PI (3.14159274101257324)
+#endif
+
 /* use following when you are using the esp32 audio kit v2.2 */
 #define ESP32_AUDIO_KIT /* project has not been tested on other hardware, modify on own risk */
 #define ES8388_ENABLED /* use this if the Audio Kit is equipped with ES8388 instead of the AC101 */
