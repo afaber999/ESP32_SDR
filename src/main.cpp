@@ -9,7 +9,7 @@
 
 #include "dsp.h"
 #include "tests.h"
-
+#include "iir_filter.h"
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
@@ -89,29 +89,57 @@ void Core0TaskLoop()
             case 't':
                 show_times = !show_times;
             break;
-            default:
-                // say what you got:
-                Serial.print("Unknown command: ");
-                Serial.println(bt);
+
+            case 'f':
+                Serial.println("Select filter 0..9 ");
+                while (Serial.available() ==0 ) {
+                    delay(1);
+                }
+                auto bti  = Serial.read();
+
+                switch ( bti ) {
+                    default:
+                    case '1':
+                        Serial.println("Filter SSB_1700");
+                        iir_filter_select(SSB_1700);
+                    break;
+                    case '2':
+                        Serial.println("Filter SSB_2500");
+                        iir_filter_select(SSB_2500);
+                    break;
+                    case '4':
+                        Serial.println("Filter SSB_2700");
+                        iir_filter_select(SSB_2700);
+                    break;
+                    case '6':
+                        Serial.println("Filter SSB_3000");
+                        iir_filter_select(SSB_3000);
+                    break;
+                    case '7':
+                        Serial.println("Filter CW_700_100");
+                        iir_filter_select(CW_700_100);
+                    break;
+                    case '8':
+                        Serial.println("Filter CW_750_200");
+                        iir_filter_select(CW_750_200);
+                    break;
+                    case '9':
+                        Serial.println("Filter CW_750_500");
+                        iir_filter_select(CW_750_500);
+                    break;
+                }
+            break;
         }
     }
 
     if ( ( loop_cnt_1hz ) >= SAMPLE_RATE && show_times)
     {
-//        auto pk_q = peak_q;
-//        auto pk_i = peak_i;
-//        peak_q = 0.0f;
-//        peak_i = 0.0f;
-
-  //      auto pkm_q = peakm_q;
-    //    auto pkm_i = peakm_i;
-      //  peakm_q = 0.0f;
-        //peakm_i = 0.0f;
+        auto pk_i = get_peak_i();
+        auto pk_q = get_peak_q();
+        clear_peak();
 
         //Serial.printf("Time1 %lld time2 = %lld\n", last_time2 -last_time1, last_time3 - last_time2);
-        //Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
-        //Serial.printf("PEAK MIN VALUES Q= %5.3f I = %5.3f\n", pkm_q, pkm_i);
-
+        Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
         loop_cnt_1hz = 0;
     }
 }
@@ -138,10 +166,11 @@ volatile int rx_cnt=0;
 float last_sample =0;
 
 
-inline void do_rx() {
+inline void do_rx_block(bool usb) {
     for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
         //do_rx_sample( &fl_sample[i], &fr_sample[i] );
-        dsp_demod_weaver_sample(&fl_sample[i], &fr_sample[i]);
+        dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i], usb);
+        //dsp_pass_thru_sample(&fl_sample[i], &fr_sample[i]);
     }
 }
 
@@ -163,6 +192,7 @@ void setup()
     weaver_performance_test(10000);
     weaver_performance_test(44100 * 1 );
     weaver_performance_test(44100 * 4 );
+
     dsp_init();
 
     setup_i2s();
@@ -186,6 +216,7 @@ void setup()
 // sample loop
 void loop()
 {
+    static bool usb = true;
     static uint8_t loop_count_u8 = 0;
 
     loop_count_u8++;
@@ -196,26 +227,18 @@ void loop()
     memset(fl_sample, 0, sizeof(fl_sample));
     memset(fr_sample, 0, sizeof(fr_sample));
 
+    // get sample block from ADC
     i2s_read_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE);
     auto time2 = esp_timer_get_time();
 
-    do_rx();
+    // process block
+    do_rx_block(usb);
 
-    /* function blocks and returns when sample is put into buffer */
+    // send data block to DAC
     if (i2s_write_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE))
     {
-        /* nothing for here */
     }
    auto time3 = esp_timer_get_time();
-
-
-    // i2s_read_stereo_samples(&fl_sample, &fr_sample);
-    // Delay_Process(&fl_sample, &fr_sample);
-
-    // if (i2s_write_stereo_samples(&fl_sample, &fr_sample))
-    // {
-    //     /* nothing for here */
-    // }
 
     last_time1 = time1;
     last_time2 = time2;

@@ -3,6 +3,11 @@
 
 #define IF_FILT1_TAPS 80
 
+// 80 TAPS lpf filter generated with the Iowa Hill fir filter design tool v7.0
+// sampling freq: 44100
+// fc 0.0612 (1349 Hz)
+// bw 0.1224 (2699 Hz)
+// No window, raised cosine 0.870
 float lpf1_coeffs[IF_FILT1_TAPS]
 {
  626.4006090244272400E-6f,

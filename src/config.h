@@ -6,18 +6,18 @@
     #define M_PI (3.14159274101257324)
 #endif
 
-/* use following when you are using the esp32 audio kit v2.2 */
-#define ESP32_AUDIO_KIT /* project has not been tested on other hardware, modify on own risk */
-#define ES8388_ENABLED /* use this if the Audio Kit is equipped with ES8388 instead of the AC101 */
+#define ESP32_AUDIO_KIT
+#define ES8388_ENABLED
 
+// DMA buffer size
 #define SAMPLE_BUFFER_SIZE  64
 
-/* on board led */
+// on board led
 #define BLINK_LED_PIN     19 // IO19 -> D5
 
+// DON't change this, filters are tuned for the frequency
 #define SAMPLE_RATE 44100
 #define SAMPLE_SIZE_16BIT
-
 
 #ifdef ES8388_ENABLED
     
@@ -32,15 +32,13 @@
     #define ES8388_PIN_DIN  26
     #define ES8388_PIN_DOUT 35
 
-
     /* i2c shared with codec */
     #define I2C_SDA ES8388_PIN_SDA
     #define I2C_SCL ES8388_PIN_SCL
 #endif
 
-// AUdIO KIT PORTS
+// AUDIO KIT PORTS
 #define GPIO_PA_EN                  GPIO_NUM_21
 #define GPIO_SEL_PA_EN              GPIO_SEL_21
-
 
 #endif /* CONFIG_H_ */
