@@ -16,6 +16,7 @@ static volatile int64_t last_time1;
 static volatile int64_t last_time2;
 static volatile int64_t last_time3;
 static volatile bool show_times = false;
+static volatile bool is_usb = true;
 
 
 static float fl_sample[SAMPLE_BUFFER_SIZE];
@@ -46,7 +47,8 @@ void Core0TaskSetup()
 {
     Serial.println( " --- Core0TaskSetup ---");
     ES8388_Setup();
-    ES8388_SelectInput(ADC_CHANNEL_1);    
+    ES8388_SelectInput(ADC_CHANNEL_2);
+    ES8388_SetMicGain(3);    
 }
 
 void Core0TaskLoop()
@@ -90,7 +92,16 @@ void Core0TaskLoop()
                 show_times = !show_times;
             break;
 
-            case 'f':
+            case 'U':
+                Serial.println("Set to USB ");
+                is_usb = true;
+            break;
+            case 'u':
+                Serial.println("Set to LSB ");
+                is_usb = false;
+            break;
+
+            case 'f': {
                 Serial.println("Select filter 0..9 ");
                 while (Serial.available() ==0 ) {
                     delay(1);
@@ -111,9 +122,13 @@ void Core0TaskLoop()
                         Serial.println("Filter SSB_2700");
                         iir_filter_select(SSB_2700);
                     break;
-                    case '6':
+                    case '5':
                         Serial.println("Filter SSB_3000");
                         iir_filter_select(SSB_3000);
+                    break;
+                    case '6':
+                        Serial.println("Filter CW_650_60");
+                        iir_filter_select(CW_650_60);
                     break;
                     case '7':
                         Serial.println("Filter CW_700_100");
@@ -128,7 +143,22 @@ void Core0TaskLoop()
                         iir_filter_select(CW_750_500);
                     break;
                 }
+            } break;
+            case 'm': {
+                Serial.println("Set MIC gain 0..8 ");
+                while (Serial.available() ==0 ) {
+                    delay(1);
+                }
+                auto mic_gain  = Serial.read()- (int)'0';
+                if ( mic_gain >=0 && mic_gain<= 9 ) {
+                    Serial.print("to ");
+                    Serial.println(mic_gain, DEC);
+                    ES8388_SetMicGain(mic_gain);    
+                }
+            }
             break;
+
+
         }
     }
 
@@ -167,16 +197,24 @@ float last_sample =0;
 
 
 inline void do_rx_block(bool usb) {
-    for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
-        //do_rx_sample( &fl_sample[i], &fr_sample[i] );
-        dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i], usb);
-        //dsp_pass_thru_sample(&fl_sample[i], &fr_sample[i]);
+
+    //do_rx_sample( &fl_sample[i], &fr_sample[i] );
+    if (usb) {
+        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
+            dsp_demod_weaver_sample(&fl_sample[i], &fr_sample[i]);
+        }
+    } else {
+        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
+            dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i]);
+        }
     }
 }
 
 void setup()
 {
-   for ( int i=0; i< 256; i++ ) {
+    esp_timer_init();
+
+    for ( int i=0; i< 256; i++ ) {
         sin_table[i] = sin(i * 2 * 3.14159 / 256);
     }
 
@@ -196,14 +234,13 @@ void setup()
     dsp_init();
 
     setup_i2s();
-    Serial.printf("inialized DAC \n");
+    Serial.printf("inialized Audio CODEC \n");
 
     WiFi.mode(WIFI_OFF);
     btStop();
 
     dump_info();
 
-    esp_timer_init();
 
     // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
     pinMode(GPIO_PA_EN, OUTPUT);
@@ -216,7 +253,6 @@ void setup()
 // sample loop
 void loop()
 {
-    static bool usb = true;
     static uint8_t loop_count_u8 = 0;
 
     loop_count_u8++;
@@ -232,7 +268,7 @@ void loop()
     auto time2 = esp_timer_get_time();
 
     // process block
-    do_rx_block(usb);
+    do_rx_block(is_usb);
 
     // send data block to DAC
     if (i2s_write_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE))

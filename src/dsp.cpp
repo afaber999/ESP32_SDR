@@ -74,7 +74,7 @@ void dsp_pass_thru_sample(float* psample_i, float* psample_q) {
 }
 
 
-void dsp_demod_weaver_sample(float* psample_i, float* psample_q, bool usb) {
+void dsp_demod_weaver_sample(float* psample_i, float* psample_q) {
 	
 	auto sample_i = *psample_i;
 	auto sample_q = *psample_q;
@@ -114,8 +114,8 @@ void dsp_demod_weaver_sample(float* psample_i, float* psample_q, bool usb) {
 	sin_idx = (sin_idx + 1) % 32;
 
     // TODO ADD AGC
-	auto gain = 20.0f;
-    auto audio_sample = (usb)?( sample_i + sample_q ) : ( sample_i - sample_q );
+	auto gain = 10.0f;
+    auto audio_sample = ( sample_i + sample_q );
 
     audio_sample *= gain; 
 

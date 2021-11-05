@@ -18,7 +18,7 @@ void weaver_performance_test(int loops) {
         auto sample_i = 0.1f + 0.00001f * l;
         auto sample_q = 0.2f + 0.00001f * l;
 
-        dsp_demod_weaver_sample(&sample_i, &sample_q, true);
+        dsp_demod_weaver_sample(&sample_i, &sample_q);
         res = sample_i + sample_q;
     }
     auto time2 = esp_timer_get_time();
