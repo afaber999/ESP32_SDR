@@ -5,7 +5,7 @@
 
 void scanner_scan(int sda, int scl, uint32_t frequency)
 {
-    bool ok = Wire.begin(sda, scl, frequency);
+    Wire.begin(sda, scl, frequency);
 
     Serial.println ();
     Serial.print("I2C scanner, SDA ");

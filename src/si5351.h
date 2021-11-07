@@ -26,6 +26,8 @@ extern vfo_t vfo[2];	// Table contains all control data for three clk outputs, b
 
 void si_init(void);
 void si_evaluate(void);
+// void si_setfreq(uint8_t clk, uint32_t frequency);
+// void si_setphase(uint8_t clk, uint32_t frequency);
 
 #define SI_GETFREQ(i)		((((i)>=0)&&((i)<2))?vfo[(i)].freq:0)
 #define SI_INCFREQ(i, d)	if ((((i)>=0)&&((i)<2))&&((vfo[(i)].freq)<(150000000-(d)))) { vfo[(i)].freq += (d); vfo[(i)].flag = 1;}

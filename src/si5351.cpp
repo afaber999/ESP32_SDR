@@ -112,11 +112,8 @@ Control Si5351:
 #include <stdio.h>
 #include <math.h>
 #include <Wire.h>
-// #include "pico/stdlib.h"
-// #include "hardware/i2c.h"
-// #include "hardware/timer.h"
-// #include "hardware/clocks.h"
 #include "si5351.h"
+#include "common.h"
 
 #define I2C_VFO		0x60	// I2C address
 
@@ -168,22 +165,6 @@ Control Si5351:
 
 vfo_t vfo[2];				// 0: clk0 and clk1     1: clk2
 
-
-static void i2cWrite(uint8_t reg, uint8_t val) {   // write reg via i2c
-  Wire.beginTransmission(I2C_VFO);
-  Wire.write(reg);
-  Wire.write(val);
-  Wire.endTransmission();
-}
-
-static void i2c_write_blocking( uint8_t *vals, uint8_t vcnt) {
-  Wire.beginTransmission(I2C_VFO);
-  while (vcnt--) Wire.write(*vals++);
-  Wire.endTransmission();
-}
-
-
-
 // Set up MSN PLL divider for vfo[i], assuming MSN has been set in vfo[i]
 // Optimize for speed, this may be called with short intervals
 // See also SiLabs AN619 section 3.2
@@ -216,8 +197,7 @@ void si_setmsn(uint8_t i)
 	data[6] = ((SI_PLL_C & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16);
 	data[7] = (P2 & 0x0000FF00) >> 8;
 	data[8] = (P2 & 0x000000FF);
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking( data, 9);
+    i2c_write_blocking( I2C_VFO, data, 9);
 }
 
 // Set up registers with MS and R divider for vfo[i], assuming values have been set in vfo[i]
@@ -248,44 +228,38 @@ void si_setmsi(uint8_t i)
 	data[6] = 0x00;
 	data[7] = 0x00;
 	data[8] = 0x00;
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-	i2c_write_blocking(data, 9);
+	i2c_write_blocking(I2C_VFO,data, 9);
 
 	// If vfo[0] also set clk 1	
 	if (i==0)
 	{
 		data[0] = SI_SYNTH_MS1;						// Same data in synthesizer
-		//i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-		i2c_write_blocking(data, 9);
+		i2c_write_blocking(I2C_VFO,data, 9);
 		
 		if (vfo[0].phase&1)							// Phase is either 90 or 270 deg?
 		{
 			data[0] = SI_CLK1_PHOFF;
 			data[1] = vfo[0].msi;
-			//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    		i2c_write_blocking(data, 2);
+    		i2c_write_blocking(I2C_VFO,data, 2);
 		}
 		else										// Phase is 0 or 180 deg
 		{
 			data[0] = SI_CLK1_PHOFF;
 			data[1] = 0;
-			//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    		i2c_write_blocking(data, 2);
+    		i2c_write_blocking(I2C_VFO,data, 2);
 		}
 		if (vfo[0].phase&2)							// Phase is 180 or 270 deg?
 		{
 			data[0] = SI_CLK1_CTL;
 			data[1] = 0x5f;							// CLK1: INT, PLLA, INV, MS, 8mA
-			//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    		i2c_write_blocking(data, 2);
+    		i2c_write_blocking(I2C_VFO,data, 2);
 		}
 	}
 		
 	// Reset associated PLL
 	data[0] = SI_PLL_RESET;
 	data[1] = (i==1)?0x80:0x20;
-	// i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    i2c_write_blocking(data, 2);
+    i2c_write_blocking(I2C_VFO,data, 2);
 
 }
 
@@ -369,14 +343,12 @@ void si_init(void)
 	data[6] = 0xf9;		// MSNA_P3[19:16] , MSNA_P2[19:16]
 	data[7] = 0x27;		// MSNA_P2[15:8]
 	data[8] = 0xc0;		// MSNA_P2[7:0]
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking(data, 9);
+    i2c_write_blocking(I2C_VFO,data, 9);
 
 	
 	// PLLB: MSN P1=0x00000b99, P2=0x000927c0, P3=0x000f4240
 	data[0] = SI_SYNTH_PLLB;		// Same content
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking(data, 9);
+    i2c_write_blocking(I2C_VFO,data, 9);
 
 	// MS0 P1=0x00002000, P2=0x00000000, P3=0x00000001, R=1
 	data[0] = SI_SYNTH_MS0;
@@ -388,51 +360,42 @@ void si_init(void)
 	data[6] = 0x00;		// MS0_P3[19:16] , MS0_P2[19:16]
 	data[7] = 0x00;		// MS0_P2[15:8]
 	data[8] = 0x00;		// MS0_P2[7:0]
-	// i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking(data, 9);
+    i2c_write_blocking(I2C_VFO,data, 9);
 
 	// MS1 P1=0x00002000, P2=0x00000000, P3=0x00000001, R=1
 	data[0] = SI_SYNTH_MS1;		// Same content
-	// i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking(data, 9);
+    i2c_write_blocking(I2C_VFO,data, 9);
 
 	// MS2 P1=0x00002000, P2=0x00000000, P3=0x00000001, R=1
 	data[0] = SI_SYNTH_MS2;		// Same content
-	// i2c_write_blocking(i2c1, I2C_VFO, data, 9, false);
-    i2c_write_blocking(data, 9);
+    i2c_write_blocking(I2C_VFO,data, 9);
 
 	// Phase offsets for 3 clocks
 	data[0] = SI_CLK0_PHOFF;
 	data[1] = 0x00;		// CLK0: phase 0 deg
 	data[2] = 0x44;		// CLK1: phase 90 deg (=MSi)
 	data[3] = 0x00;		// CLK2: phase 0 deg
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 4, false);
-    i2c_write_blocking(data, 4);
+    i2c_write_blocking(I2C_VFO,data, 4);
 
 	// Output port settings for 3 clocks
 	data[0] = SI_CLK0_CTL;
 	data[1] = 0x4f;		// CLK0: INT, PLLA, nonINV, MS, 8mA
 	data[2] = 0x4f;		// CLK1: INT, PLLA, nonINV, MS, 8mA
 	data[3] = 0x6f;		// CLK2: INT, PLLB, nonINV, MS, 8mA
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 4, false);
-    i2c_write_blocking(data, 4);
+    i2c_write_blocking(I2C_VFO,data, 4);
 
 	// Disable spread spectrum (startup state is undefined)	
 	data[0] = SI_SS_EN;
 	data[1] = 0x00;
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    i2c_write_blocking(data, 2);
+    i2c_write_blocking(I2C_VFO,data, 2);
 	
 	// Reset both PLL
 	data[0] = SI_PLL_RESET;
 	data[1] = 0xa0;
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    i2c_write_blocking(data, 2);
+    i2c_write_blocking(I2C_VFO,data, 2);
 
 	// Enable all outputs	
 	data[0] = SI_CLK_OE;
 	data[1] = 0x00;
-	//i2c_write_blocking(i2c1, I2C_VFO, data, 2, false);
-    i2c_write_blocking(data, 2);
-
+    i2c_write_blocking(I2C_VFO,data, 2);
 }

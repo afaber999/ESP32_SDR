@@ -6,10 +6,11 @@
 #include "i2s_interface.h"
 #include "es8388.h"
 #include "i2c_scanner.h"
-
+#include "si5351.h"
 #include "dsp.h"
 #include "tests.h"
 #include "iir_filter.h"
+#include "hmi.h"
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
@@ -27,6 +28,10 @@ float sin_table[256];
 int phase = 0;
 
 
+// forward function declarations
+void Core0TaskLoop();
+
+
 static void dump_info() {
     Serial.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
     Serial.printf("ESP.getFreeHeap() %d\n", ESP.getFreeHeap());
@@ -41,18 +46,139 @@ static void dump_info() {
 }
 
 
-TaskHandle_t  Core0TaskHnd ;
+static TaskHandle_t  Core0TaskHnd ;
+
+
+uint32_t vfo_frequency = 7074000;
+
+
 
 void Core0TaskSetup()
 {
     Serial.println( " --- Core0TaskSetup ---");
+    for ( int i=0; i< 256; i++ ) {
+        sin_table[i] = sin(i * 2 * 3.14159 / 256);
+    }
+
+    weaver_performance_test(1);
+    weaver_performance_test(10);
+    weaver_performance_test(100);
+    weaver_performance_test(1000);
+    weaver_performance_test(10000);
+    weaver_performance_test(44100 * 1 );
+    weaver_performance_test(44100 * 4 );
+
+    dsp_init();
+
+    setup_i2s();
+    Serial.printf("inialized Audio CODEC \n");
+    dump_info();
+
+
+    // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
+    pinMode(GPIO_PA_EN, OUTPUT);
+    digitalWrite(GPIO_PA_EN, HIGH);
+
+}
+
+
+void Core0Task(void *parameter)
+{
+    Core0TaskSetup();
+
+    while (true)
+    {
+        Core0TaskLoop();
+        delay(1);
+        yield();
+    }
+}
+
+inline void Core0TaskInit()
+{
+    xTaskCreatePinnedToCore(Core0Task, "CoreTask0", 8000, NULL, 999, &Core0TaskHnd, 0);
+}
+
+
+volatile int rx_cnt=0;
+float last_sample =0;
+
+
+inline void do_rx_block(bool usb) {
+
+    //do_rx_sample( &fl_sample[i], &fr_sample[i] );
+    if (usb) {
+        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
+            dsp_demod_weaver_sample(&fl_sample[i], &fr_sample[i]);
+        }
+    } else {
+        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
+            dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i]);
+        }
+    }
+}
+
+void setup()
+{
+    // Araduino setup, runs on core 1
+    esp_timer_init();
+    WiFi.mode(WIFI_OFF);
+    btStop();
+
+    Serial.begin(115200);
+    Serial.println("Start ESP32 SDR v0.2a");
+
+    // contol I2C from core 1
     ES8388_Setup();
     ES8388_SelectInput(ADC_CHANNEL_2);
     ES8388_SetMicGain(3);    
+
+    si_init();
+    hmi_init();
+
+	SI_SETFREQ(0, vfo_frequency);			// Set freq to 7074 kHz
+	SI_SETPHASE(0, 1);								// Set phase to 90deg
+
+    // create DSP task on core 0
+    Core0TaskInit();
 }
 
 void Core0TaskLoop()
-{    
+{
+    static uint8_t loop_count_u8 = 0;
+
+    loop_count_u8++;
+    loop_cnt_1hz+= SAMPLE_BUFFER_SIZE;
+
+    auto time1 = esp_timer_get_time();
+
+    memset(fl_sample, 0, sizeof(fl_sample));
+    memset(fr_sample, 0, sizeof(fr_sample));
+
+    // get sample block from ADC
+    i2s_read_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE);
+    auto time2 = esp_timer_get_time();
+
+    // process block
+    do_rx_block(is_usb);
+
+    // send data block to DAC
+    if (i2s_write_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE))
+    {
+    }
+   auto time3 = esp_timer_get_time();
+
+    last_time1 = time1;
+    last_time2 = time2;
+    last_time3 = time3;
+
+
+}
+
+// Arduino loop on core 1
+void loop()
+{
+    si_evaluate();
     if (Serial.available() > 0) {
         auto bt  = Serial.read();
         switch ( bt ) {
@@ -156,6 +282,17 @@ void Core0TaskLoop()
                     ES8388_SetMicGain(mic_gain);    
                 }
             }
+            case '+':
+                Serial.println("Increment freq by 1000 Hz ");
+                SI_INCFREQ(0,1000);
+                vfo_frequency = SI_GETFREQ(0);
+                Serial.printf("New freq: %d", vfo_frequency);
+            break;
+            case '-':
+                Serial.println("Decrement freq by 100000 Hz ");
+                SI_DECFREQ(0,100000);
+                vfo_frequency = SI_GETFREQ(0);
+                Serial.printf("New freq: %d", vfo_frequency);
             break;
 
 
@@ -172,112 +309,5 @@ void Core0TaskLoop()
         Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
         loop_cnt_1hz = 0;
     }
-}
-
-void Core0Task(void *parameter)
-{
-    Core0TaskSetup();
-
-    while (true)
-    {
-        Core0TaskLoop();
-        delay(1);
-        yield();
-    }
-}
-
-inline void Core0TaskInit()
-{
-    xTaskCreatePinnedToCore(Core0Task, "CoreTask0", 8000, NULL, 999, &Core0TaskHnd, 0);
-}
-
-
-volatile int rx_cnt=0;
-float last_sample =0;
-
-
-inline void do_rx_block(bool usb) {
-
-    //do_rx_sample( &fl_sample[i], &fr_sample[i] );
-    if (usb) {
-        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
-            dsp_demod_weaver_sample(&fl_sample[i], &fr_sample[i]);
-        }
-    } else {
-        for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
-            dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i]);
-        }
-    }
-}
-
-void setup()
-{
-    esp_timer_init();
-
-    for ( int i=0; i< 256; i++ ) {
-        sin_table[i] = sin(i * 2 * 3.14159 / 256);
-    }
-
-    delay(500);
-    Serial.begin(115200);
-    Serial.println();
-
-
-    weaver_performance_test(1);
-    weaver_performance_test(10);
-    weaver_performance_test(100);
-    weaver_performance_test(1000);
-    weaver_performance_test(10000);
-    weaver_performance_test(44100 * 1 );
-    weaver_performance_test(44100 * 4 );
-
-    dsp_init();
-
-    setup_i2s();
-    Serial.printf("inialized Audio CODEC \n");
-
-    WiFi.mode(WIFI_OFF);
-    btStop();
-
-    dump_info();
-
-
-    // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
-    pinMode(GPIO_PA_EN, OUTPUT);
-    digitalWrite(GPIO_PA_EN, HIGH);
-
-    Core0TaskInit();
-}
-
-
-// sample loop
-void loop()
-{
-    static uint8_t loop_count_u8 = 0;
-
-    loop_count_u8++;
-    loop_cnt_1hz+= SAMPLE_BUFFER_SIZE;
-
-    auto time1 = esp_timer_get_time();
-
-    memset(fl_sample, 0, sizeof(fl_sample));
-    memset(fr_sample, 0, sizeof(fr_sample));
-
-    // get sample block from ADC
-    i2s_read_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE);
-    auto time2 = esp_timer_get_time();
-
-    // process block
-    do_rx_block(is_usb);
-
-    // send data block to DAC
-    if (i2s_write_stereo_samples_buff(fl_sample, fr_sample, SAMPLE_BUFFER_SIZE))
-    {
-    }
-   auto time3 = esp_timer_get_time();
-
-    last_time1 = time1;
-    last_time2 = time2;
-    last_time3 = time3;
 }
 
