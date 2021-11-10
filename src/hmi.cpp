@@ -284,6 +284,17 @@ void hmi_handler(uint8_t event)
 
 uint32_t pressed;
 
+
+void hmi_show_keys() {
+    Serial.printf("INTERRUPT KEYS %d %d %d %d %d %d \n", 
+        digitalRead(PIN_K1),
+        digitalRead(PIN_K2),
+        digitalRead(PIN_K3),
+        digitalRead(PIN_K4),
+        digitalRead(PIN_K5),
+        digitalRead(PIN_K6));    
+}
+
 /*
  * GPIO IRQ callback routine
  * Sets the detected event and invokes the HMI state machine
@@ -291,14 +302,13 @@ uint32_t pressed;
 void IRAM_ATTR hmi_callback(){
 
     pressed++;
-
-    // Serial.printf("INTERRUPT KEYS %d %d %d %d %d %d \n", 
-    //     digitalRead(PIN_K1),
-    //     digitalRead(PIN_K2),
-    //     digitalRead(PIN_K3),
-    //     digitalRead(PIN_K4),
-    //     digitalRead(PIN_K5),
-    //     digitalRead(PIN_K6));
+    Serial.printf("INTERRUPT KEYS %d %d %d %d %d %d \n", 
+        digitalRead(PIN_K1),
+        digitalRead(PIN_K2),
+        digitalRead(PIN_K3),
+        digitalRead(PIN_K4),
+        digitalRead(PIN_K5),
+        digitalRead(PIN_K6));
 }
 
 
@@ -320,7 +330,7 @@ void hmi_init()
     // attachInterrupt(PIN_K3, hmi_callback, FALLING);
     // attachInterrupt(PIN_K4, hmi_callback, FALLING);
     // attachInterrupt(PIN_K5, hmi_callback, FALLING);
-    // attachInterrupt(PIN_K6, hmi_callback, FALLING);
+    //attachInterrupt(PIN_K6, hmi_callback, FALLING);
 
     // Initialize LCD and set VFO
     hmi_state = HMI_S_TUNE;

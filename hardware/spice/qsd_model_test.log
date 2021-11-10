@@ -1,0 +1,60 @@
+Circuit: * C:\Users\nly96021\Documents\PlatformIO\Projects\ESP32_SDR\hardware\spice\qsd_model_test.asc
+
+Direct Newton iteration failed to find .op point.  (Use ".option noopiter" to skip.)
+Starting Gmin stepping
+Gmin = 10
+Gmin = 1.07374
+Gmin = 0.115292
+Gmin = 0.0123794
+Gmin = 0.00132923
+Gmin = 0.000142725
+Gmin = 1.5325e-005
+Gmin = 1.6455e-006
+Gmin = 1.76685e-007
+Gmin = 1.89714e-008
+vernier = 0.5
+vernier = 0.25
+vernier = 0.125
+Gmin = 1.26855e-008
+vernier = 0.0625
+vernier = 0.0833333
+Gmin = 1.11477e-008
+vernier = 0.111111
+vernier = 0.148148
+Gmin = 8.43903e-009
+vernier = 0.197531
+Gmin = 5.46402e-009
+vernier = 0.263374
+vernier = 0.351165
+Gmin = 2.66176e-009
+vernier = 0.46822
+vernier = 0.624294
+Gmin = 8.66282e-010
+vernier = 0.832392
+Gmin = 1.55993e-010
+vernier = 1
+Gmin = 1.67496e-011
+Gmin = 1.79848e-012
+Gmin = 1.9311e-013
+Gmin = 0
+Gmin stepping succeeded in finding the operating point.
+
+
+Date: Wed Nov 10 17:15:16 2021
+Total elapsed time: 6.313 seconds.
+
+tnom = 27
+temp = 27
+method = modified trap
+totiter = 399002
+traniter = 397961
+tranpoints = 130729
+accept = 88917
+rejected = 41812
+matrix size = 56
+fillins = 106
+solver = Normal
+Thread vector: 13.5/8.5[3] 6.3/4.3[3] 1.3/3.8[1] 0.2/1.5[1]  2592/500
+Matrix Compiler1: 9.00 KB object code size  2.1/2.1/[1.0]
+Matrix Compiler2: 6.55 KB object code size  0.8/1.9/[0.3]
+

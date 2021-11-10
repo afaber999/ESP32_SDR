@@ -308,6 +308,7 @@ void loop()
         //Serial.printf("Time1 %lld time2 = %lld\n", last_time2 -last_time1, last_time3 - last_time2);
         Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
         loop_cnt_1hz = 0;
+        hmi_show_keys();
     }
 }
 
