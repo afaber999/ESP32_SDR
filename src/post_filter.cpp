@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <cassert>
-#include "iir_filter.h"
+#include "post_filter.h"
 
 #define IIR_SECTS  (3)
 
@@ -98,7 +98,7 @@ static const float c_b2_1700[IIR_SECTS] = { 0.375474174355530377f, 0.45854718562
 
 
 
-void iir_filter_select(IIR_FILTERS filter)
+void post_filter_select(POST_FILTERS filter)
 {
 
 	switch (filter)
@@ -182,7 +182,7 @@ void iir_filter_select(IIR_FILTERS filter)
 
 
 // Form 1 Biquad Section Calc, called by iir_filter_sample
-inline float iir_filter_sect(int k, float x)
+inline float post_filter_sect(int k, float x)
 {
 	auto ct = x * c_b0[k] + c_b1[k] * frx1[k] + c_b2[k] * frx2[k];
 	auto y  = c_a0[k] * ct - c_a1[k] * fry1[k] - c_a2[k] * fry2[k];
@@ -196,13 +196,13 @@ inline float iir_filter_sect(int k, float x)
 }
 
 
-float iir_filter_sample( float sample)
+float post_filter_sample( float sample)
 {
-	auto y = iir_filter_sect(0, sample);
+	auto y = post_filter_sect(0, sample);
 	
 	for (auto s = 1; s < IIR_SECTS; s++)
 	{
-		y = iir_filter_sect(s, y);
+		y = post_filter_sect(s, y);
 	}
 	
 	return y;

@@ -9,5 +9,13 @@ void clear_peak();
 float get_peak_i();
 float get_peak_q();
 
+enum AGC_MODES {
+    AGC_OFF,
+    AGC_SLOW,
+    AGC_FAST
+};
+
+void select_agc_mode(AGC_MODES mode);
+
 
 #endif

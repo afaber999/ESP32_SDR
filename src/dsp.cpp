@@ -4,7 +4,7 @@
 
 #include "dsp.h"
 #include "filters.h"
-#include "iir_filter.h"
+#include "post_filter.h"
 
 static volatile float peak_i;
 static volatile float peak_q;
@@ -23,6 +23,12 @@ float get_peak_q() {
 void clear_peak() {
     peak_i = 0.0f;
     peak_q = 0.0f;
+}
+
+static AGC_MODES agc_mode = AGC_OFF;
+
+void select_agc_mode(AGC_MODES mode) {
+    agc_mode = mode;
 }
 
 
@@ -44,7 +50,7 @@ uint32_t sin_idx = 0;
 
 void dsp_init() {
 
-    iir_filter_select(SSB_3000);
+    post_filter_select(SSB_3000);
 
 	for (auto i = 0; i < 32; i++) {
 		sin_32[i] = (float)sin(i * 2.0 * M_PI / 32.0 );
@@ -120,7 +126,7 @@ void dsp_demod_weaver_sample(float* psample_i, float* psample_q) {
     audio_sample *= gain; 
 
     // post filtering
-    audio_sample = iir_filter_sample(audio_sample);
+    audio_sample = post_filter_sample(audio_sample);
 
 	*psample_i = audio_sample;
 	*psample_q = audio_sample;

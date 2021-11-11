@@ -35,7 +35,7 @@
 #include "hmi.h"
 #include "dsp.h"
 #include "si5351.h"
-
+#include "config.h"
 // TEMP HERE
 volatile bool tx_enabled = false;
 
@@ -275,25 +275,19 @@ void hmi_handler(uint8_t event)
 // }
 
 
-#define PIN_K1 36
-#define PIN_K2 13
-#define PIN_K3 19
-#define PIN_K4 23
-#define PIN_K5 18
-#define PIN_K6 5
 
-uint32_t pressed;
+static uint32_t pressed;
 
 
-void hmi_show_keys() {
-    Serial.printf("INTERRUPT KEYS %d %d %d %d %d %d \n", 
-        digitalRead(PIN_K1),
-        digitalRead(PIN_K2),
-        digitalRead(PIN_K3),
-        digitalRead(PIN_K4),
-        digitalRead(PIN_K5),
-        digitalRead(PIN_K6));    
-}
+// void hmi_show_keys() {
+//     Serial.printf("INTERRUPT KEYS %d %d %d %d %d %d \n", 
+//         digitalRead(PIN_K1),
+//         digitalRead(PIN_K2),
+//         digitalRead(PIN_K3),
+//         digitalRead(PIN_K4),
+//         digitalRead(PIN_K5),
+//         digitalRead(PIN_K6));    
+// }
 
 /*
  * GPIO IRQ callback routine

@@ -41,4 +41,19 @@
 #define GPIO_PA_EN                  GPIO_NUM_21
 #define GPIO_SEL_PA_EN              GPIO_SEL_21
 
+
+#define PIN_K1 36
+#define PIN_K2 13
+#define PIN_K3 19
+#define PIN_K4 23
+#define PIN_K5 18
+#define PIN_K6 5
+
+
+#define PIN_PTT_BUTTON (PIN_K1)
+#define PIN_ROT_BUTTON (PIN_K2)
+#define PIN_ROT_UP (PIN_K3)
+#define PIN_ROT_DOWN (PIN_K4)
+
+
 #endif /* CONFIG_H_ */
