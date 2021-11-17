@@ -79,24 +79,25 @@ void dsp_task_setup()
         sin_table[i] = sin(i * 2 * 3.14159 / 256);
     }
 
-    weaver_performance_test(1);
-    weaver_performance_test(10);
-    weaver_performance_test(100);
-    weaver_performance_test(1000);
-    weaver_performance_test(10000);
+    // weaver_performance_test(1);
+    // weaver_performance_test(10);
+    // weaver_performance_test(100);
+    // weaver_performance_test(1000);
+    // weaver_performance_test(10000);
     weaver_performance_test(44100 * 1 );
-    weaver_performance_test(44100 * 4 );
+    weaver_performance_test(44100 * 2 );
+
+    // sin_performance_test(1);
+    // sin_performance_test(10);
+    // sin_performance_test(100);
+    // sin_performance_test(1000);
+    // sin_performance_test(10000);
+    // sin_performance_test(44100 * 1 );
+    // sin_performance_test(44100 * 4 );
+    // test_kiss_fft();
 
     dsp_init();
-
     setup_i2s();
-    Serial.printf("inialized Audio CODEC \n");
-    dump_info();
-
-    // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
-    pinMode(GPIO_PA_EN, OUTPUT);
-    digitalWrite(GPIO_PA_EN, HIGH);
-
 }
 
 
@@ -149,7 +150,7 @@ void radio_setup()
     btStop();
 
     Serial.begin(115200);
-    Serial.println("Start ESP32 SDR v0.2b");
+    Serial.println("Start ESP32 SDR v0.2c... stay tuned");
 
     // contol I2C from core 1
     ES8388_Setup();
@@ -158,6 +159,10 @@ void radio_setup()
 
     si_init();
     hmi_init();
+
+    // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
+    pinMode(GPIO_PA_EN, OUTPUT);
+    digitalWrite(GPIO_PA_EN, HIGH);
 
 	SI_SETFREQ(0, vfo_frequency);
     SI_SETPHASE(0, 1);
