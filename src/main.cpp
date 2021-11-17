@@ -1,6 +1,7 @@
 
 #include <Arduino.h>
 #include "radio.h"
+#include "web_ui.h"
 
 static TaskHandle_t  Core0TaskHnd ;
 static void Core0Task(void *parameter);
@@ -14,11 +15,13 @@ void setup()
 {
     radio_setup();
     Core0TaskInit();
+    web_ui_setup();
 }
 
 void loop()
 {
     radio_loop();
+    web_ui_loop();
 }
 
 static void Core0Task(void *parameter)
