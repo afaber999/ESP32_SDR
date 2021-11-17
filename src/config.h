@@ -1,4 +1,3 @@
-
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
@@ -10,12 +9,12 @@
 #define ES8388_ENABLED
 
 // DMA SIZES (experimental values)
-// input  2048 samples
-// output 2048 samples
-// total  4096 samples, margin x 2.5?
-// alloc 10240 samples total (requires 40k mem)
+// input  1024 samples
+// output 1024 samples
+// total  2048 samples, margin x 2.5?
+// alloc  5120 samples total (requires 20k mem)
 static const uint32_t DMA_SAMPLES = 1024;
-static const uint32_t DMA_BUFFERS =   10;
+static const uint32_t DMA_BUFFERS =    5;
 static const uint32_t FFT_SAMPLES = 2048;
 
 
@@ -61,6 +60,5 @@ static const uint32_t FFT_SAMPLES = 2048;
 #define PIN_ROT_BUTTON (PIN_K2)
 #define PIN_ROT_UP (PIN_K3)
 #define PIN_ROT_DOWN (PIN_K4)
-
 
 #endif /* CONFIG_H_ */

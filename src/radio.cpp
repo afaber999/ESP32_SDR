@@ -22,7 +22,7 @@ static volatile int64_t last_time3;
 static volatile bool show_times = false;
 static volatile bool is_usb = true;
 
-static float samples[2 * FFT_SAMPLES];
+static int16_t samples[DMA_SAMPLES * 2];
 
 const uint32_t sin_table_size = 256;
 float sin_table[sin_table_size];
@@ -41,20 +41,18 @@ static InvPushButton rot_button(PIN_ROT_BUTTON);
 
 static void dump_info() {
     Serial.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-    Serial.printf("ESP.getFreeHeap() %d\n", ESP.getFreeHeap());
-    Serial.printf("ESP.getMinFreeHeap() %d\n", ESP.getMinFreeHeap());
-    Serial.printf("ESP.getHeapSize() %d\n", ESP.getHeapSize());
-    Serial.printf("ESP.getMaxAllocHeap() %d\n", ESP.getMaxAllocHeap());
-
+    Serial.printf("ESP.getFreeHeap()    : %d\n", ESP.getFreeHeap());
+    Serial.printf("ESP.getMinFreeHeap() : %d\n", ESP.getMinFreeHeap());
+    Serial.printf("ESP.getHeapSize()    : %d\n", ESP.getHeapSize());
+    Serial.printf("ESP.getMaxAllocHeap(): %d\n", ESP.getMaxAllocHeap());
+    Serial.printf("Total PSRAM          : %d\n", ESP.getPsramSize());
+    Serial.printf("Free PSRAM           : %d\n", ESP.getFreePsram());
     Serial.printf("ES8388 REGISTER DUMP\n");
     //scanner_scan(I2C_SDA, I2C_SCL, 400000);
     es8388_read_range(0, 53);
 
     Serial.printf("PTT button %d\n", ptt_button.is_pressed());
-
-
     Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-
 }
 
 static uint32_t timer_cnt;
@@ -79,14 +77,15 @@ void dsp_task_setup()
     for ( int i=0; i< sin_table_size; i++ ) {
         sin_table[i] = sinf(i * 2 * 3.14159f / (float)sin_table_size);
     }
-
-    for ( int i=0; i< sin_table_size; i++ ) {
-        printf( "Sin[%d] = %6.2f ", i, sin_table[i]);
-    }
+    // for ( int i=0; i< sin_table_size; i++ ) {
+    //     printf( "Sin[%d] = %6.2f ", i, sin_table[i]);
+    // }
 
     // test_kiss_fft();
 
-    dsp_init();
+    if (!dsp_init() ) {
+        Serial.println("Failed to intialize DSP\n");
+    }
     setup_i2s();
 }
 
@@ -98,52 +97,34 @@ void dsp_task_loop()
 
     auto time1 = esp_timer_get_time();
 
-    // REQUIRED ? memset(fl_sample, 0, sizeof(fl_sample));
-    // REQUIRED ? memset(fr_sample, 0, sizeof(fr_sample));
-
-    // get sample block from ADC
-    // (1.0f/32767.0f)
-    float gain_i = (1.0f/32767.0f);
-    float gain_q = (1.0f/32767.0f);
-
-    // need to read it in chunks, max buffer size
-    i2s_read_buffer(&samples[              0], gain_i, gain_q);
-    i2s_read_buffer(&samples[DMA_SAMPLES * 2], gain_i, gain_q);
+    // get sample block from ADC (DMA_SAMPLES)
+    // since we have 2 channels, samples should 
+    // hold 2 * DMA_SAMPLES of type int16_t
+    if  (! i2s_read_buffer(samples) ) {
+        Serial.println( "Can't read ADC samples\n");
+    }
 
     auto time2 = esp_timer_get_time();
 
     uint32_t phase1 = 0;
     uint32_t phase2 = 0;
     
-    for ( auto i =0; i< FFT_SAMPLES; i++ ) {
-        samples[2*i + 0 ] =  (sin_table[phase1 ]) * 0.5;
-        samples[2*i + 1 ] =  (sin_table[phase1 ] + sin_table[phase2 ]) * 0.4;
+    // generate test pattern
+    for ( auto i =0; i< DMA_SAMPLES; i++ ) {
+        samples[2*i + 0 ] =  (int16_t)((sin_table[phase1 ]) * 0.5f * 32767.0f );
+        samples[2*i + 1 ] =  (int16_t)((sin_table[phase1 ] + sin_table[phase2 ]) * 0.4 * 32767.0f);
         phase1 = (phase1 + 3 ) % sin_table_size;
         phase2 = (phase2 + 7 ) % sin_table_size;
     }
 
-    dsp_demod_ssb(samples);
-
-    // i2s_read_stereo_samples_buff(fft_in, gain_i, gain_q);
-
-    // auto time2 = esp_timer_get_time();
-
-    // // process block
-    // if (usb) {
-    //     for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
-    //         dsp_demod_weaver_sample(&fl_sample[i], &fr_sample[i]);
-    //     }
-    // } else {
-    //     for ( auto i=0; i < SAMPLE_BUFFER_SIZE; i++) {
-    //         dsp_demod_weaver_sample(&fr_sample[i], &fl_sample[i]);
-    //     }
-    // }
+    dsp_demod(samples, DEMOD_LSB);
 
     // send data block to DAC
-    i2s_write_buffer((float*)&samples[              0] );
-    i2s_write_buffer((float*)&samples[DMA_SAMPLES * 2] );
+    if (!i2s_write_buffer(samples) ) {
+        Serial.println( "Can't write DAC samples\n");
+    }
 
-   auto time3 = esp_timer_get_time();
+    auto time3 = esp_timer_get_time();
 
     last_time1 = time1;
     last_time2 = time2;
@@ -180,6 +161,12 @@ void radio_setup()
     timerAttachInterrupt(timer, &timer_isr, true);
     timerAlarmWrite(timer, 1000, true);
     timerAlarmEnable(timer);
+
+    // Serial.printf("Used PSRAM: %d", ESP.getPsramSize() - ESP.getFreePsram());
+    // auto psdRamBuffer = ps_malloc(500000);
+    // Serial.printf("Used PSRAM: %d", ESP.getPsramSize() - ESP.getFreePsram());
+    // free(psdRamBuffer);
+    // Serial.printf("Used PSRAM: %d", ESP.getPsramSize() - ESP.getFreePsram());
 }
 
 void radio_loop()

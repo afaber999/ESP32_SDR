@@ -1,7 +1,7 @@
 #ifndef DSP_H_INCLUDED
 #define DSP_H_INCLUDED
 
-void dsp_init();
+bool dsp_init();
 
 
 void clear_peak();
@@ -14,7 +14,16 @@ enum AGC_MODES {
     AGC_FAST
 };
 
-void dsp_demod_ssb(float* psamples);
+enum DEMOD_MODE {
+    DEMOD_LSB,
+    DEMOD_USB,
+    DEMOD_CWL,
+    DEMOD_CWU,
+    DEMOD_AM,
+    DEMOD_FM
+};
+
+void dsp_demod(int16_t* psamples, DEMOD_MODE mode);
 void select_agc_mode(AGC_MODES mode);
 
 

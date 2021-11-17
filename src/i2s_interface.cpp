@@ -7,57 +7,33 @@ const i2s_port_t i2s_port_number = I2S_NUM_0;
 
 // WRITE DMA_SAMPLES per channel at once
 // fl_sample and fr_sample must be large enough to hold DMA_SAMPLES
-void i2s_write_buffer(float *cpx_buffer)
+bool i2s_write_buffer(int16_t* data)
 {
-    // alloc temp buffer
-    static union
-    {
-        uint32_t sample;
-        int16_t ch[2];
-    } sampleData[DMA_SAMPLES];
-
-    for (int n = 0; n < DMA_SAMPLES; n++)
-    {
-        sampleData[n].ch[0] = int16_t(*cpx_buffer++ * 16383.0f);
-        sampleData[n].ch[1] = int16_t(*cpx_buffer++ * 16383.0f);
-    }
-
-    static size_t bytes_written = 0;
-
+    static size_t bytes_written = 0;    
     i2s_write(  i2s_port_number, 
-                (const char *)&sampleData[0],
+                (const char *)data,
                 2 * sizeof(int16_t) *DMA_SAMPLES,
                 &bytes_written, 
                 portMAX_DELAY);
+
+    return ( bytes_written == DMA_SAMPLES * 2 * sizeof(uint16_t));
 }
 
 
-// READ DMA_SAMPLES per channel at once
-// cpx_buffer and fr_sample must be large enough to hold 2 * DMA_SAMPLES
-void i2s_read_buffer(float *cpx_buffer, float gain_i, float gain_q)
+// READ DMA_SAMPLES
+// two channels as in16
+bool i2s_read_buffer(int16_t* data)
 {
-    static size_t bytes_read = 0;
-
-    // alloc temp buffer
-    static union
-    {
-        uint32_t sample;
-        int16_t ch[2];
-    } sampleData[DMA_SAMPLES];
-
+    static size_t bytes_read = 0;    
     i2s_read(   i2s_port_number, 
-                (char *)&sampleData[0].sample, 
+                (char *)data, 
                 2 * sizeof(int16_t) *DMA_SAMPLES, 
                 &bytes_read, 
                 portMAX_DELAY);
-
-    for (int n = 0; n < DMA_SAMPLES; n++)
-    {
-        // normalize samples to +- 1.0 float values
-        *cpx_buffer++ = ((float)sampleData[n].ch[0] * gain_i);
-        *cpx_buffer++ = ((float)sampleData[n].ch[1] * gain_q);
-    }
+    return ( bytes_read == DMA_SAMPLES * 2 * sizeof(uint16_t));
 }
+
+
 #define I2S_MCLK_PIN ES8388_PIN_MCLK
 #define I2S_BCLK_PIN ES8388_PIN_SCLK
 #define I2S_WCLK_PIN ES8388_PIN_LRCK

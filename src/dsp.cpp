@@ -9,6 +9,7 @@
 #include "config.h"
 
 
+static kiss_fft_cpx fft_in[FFT_SAMPLES];
 static kiss_fft_cpx fft_proc[FFT_SAMPLES];
 static kiss_fft_cpx fft_out[FFT_SAMPLES];
 
@@ -37,26 +38,43 @@ void select_agc_mode(AGC_MODES mode) {
     agc_mode = mode;
 }
 
-
 auto fft_cfg_fwd = kiss_fft_alloc(FFT_SAMPLES, 0, NULL, NULL);
 auto fft_cfg_rev = kiss_fft_alloc(FFT_SAMPLES, 1, NULL, NULL);
 
-void dsp_init() {
+bool dsp_init() {
     post_filter_select(SSB_3000);
+    return ( 2 * DMA_SAMPLES == FFT_SAMPLES);
 }
 
-void dsp_demod_ssb(float* psamples) {
-    kiss_fft(fft_cfg_fwd , (kiss_fft_cpx*)psamples , fft_proc);
+void dsp_demod(int16_t* psamples, DEMOD_MODE mode) {
+
+    // overlap and add
+    int idx = FFT_SAMPLES / 2;
+    auto new_samples = psamples;
+
+    for (int n = 0; n < FFT_SAMPLES/2; n++)
+    {
+        fft_in[n] = fft_in[idx];
+        fft_in[idx].r = (float)*new_samples++ * (1.0f / 32767.0f);
+        fft_in[idx].i = (float)*new_samples++ * (1.0f / 32767.0f);
+        idx++;
+    }
+
+    kiss_fft(fft_cfg_fwd , fft_in , fft_proc);
+
+    // apply shift
+
+    // mask out
+
+    // apply filter
+
+
     kiss_fft(fft_cfg_rev, fft_proc, fft_out);
 
-    // filter
-    // shift
-    
-    for ( auto i = 0; i < FFT_SAMPLES; i++ ) {
-        auto audio_out = (fft_out[i].r + fft_out[i].i) * ( 0.5f /(float)FFT_SAMPLES );
+    // Overlap and add, take first half of FFT output buffer
+    for ( auto i = 0; i < FFT_SAMPLES / 2; i++ ) {
+        auto audio_out = (int16_t)(fft_out[i].r + fft_out[i].i) * ( 16384.0f * 0.5f /(float)FFT_SAMPLES );
         *psamples++ = audio_out;
         *psamples++ = audio_out;
-        // *psamples++ = fft_out[i].r * 1/(float)FFT_SAMPLES;
-        // *psamples++ = fft_out[i].i * 1/(float)FFT_SAMPLES;
     }
 }

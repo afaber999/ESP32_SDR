@@ -6,9 +6,8 @@
 
 
 void setup_i2s();
-void i2s_write_buffer(float *cpx_buffer);
-void i2s_read_buffer(float *cpx_buffer, float gain_i, float gain_q);
-
+bool i2s_write_buffer(int16_t* data);
+bool i2s_read_buffer(int16_t* data);
 #endif
 
 
