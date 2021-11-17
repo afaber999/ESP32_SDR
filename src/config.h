@@ -9,14 +9,21 @@
 #define ESP32_AUDIO_KIT
 #define ES8388_ENABLED
 
-// DMA buffer size
-#define SAMPLE_BUFFER_SIZE  64
+// DMA SIZES (experimental values)
+// input  2048 samples
+// output 2048 samples
+// total  4096 samples, margin x 2.5?
+// alloc 10240 samples total (requires 40k mem)
+static const uint32_t DMA_SAMPLES = 1024;
+static const uint32_t DMA_BUFFERS =   10;
+static const uint32_t FFT_SAMPLES = 2048;
+
 
 // on board led
 #define BLINK_LED_PIN     19 // IO19 -> D5
 
 // DON't change this, filters are tuned for the frequency
-#define SAMPLE_RATE 44100
+#define SAMPLE_RATE 48000
 #define SAMPLE_SIZE_16BIT
 
 #ifdef ES8388_ENABLED
