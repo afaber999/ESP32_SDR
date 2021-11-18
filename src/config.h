@@ -25,23 +25,20 @@ static const uint32_t FFT_SAMPLES = 2048;
 #define SAMPLE_RATE 48000
 #define SAMPLE_SIZE_16BIT
 
-#ifdef ES8388_ENABLED
-    
-    #define ES8388_ADDR 0x10
+// i2c address of es8388
+static const uint8_t ES8388_ADDR = 0x10;
 
-    #define ES8388_PIN_SDA  18
-    #define ES8388_PIN_SCL  23
+static const uint8_t ES8388_PIN_SDA  =18;
+static const uint8_t ES8388_PIN_SCL  =23;
+static const uint8_t ES8388_PIN_MCLK =0;
+static const uint8_t ES8388_PIN_SCLK =5;
+static const uint8_t ES8388_PIN_LRCK =25;
+static const uint8_t ES8388_PIN_DIN  =26;
+static const uint8_t ES8388_PIN_DOUT =35;
 
-    #define ES8388_PIN_MCLK 0
-    #define ES8388_PIN_SCLK 5
-    #define ES8388_PIN_LRCK 25
-    #define ES8388_PIN_DIN  26
-    #define ES8388_PIN_DOUT 35
-
-    /* i2c shared with codec */
-    #define I2C_SDA ES8388_PIN_SDA
-    #define I2C_SCL ES8388_PIN_SCL
-#endif
+/* i2c shared with codec */
+static const uint8_t I2C_SDA =ES8388_PIN_SDA;
+static const uint8_t I2C_SCL =ES8388_PIN_SCL;
 
 // AUDIO KIT PORTS
 #define GPIO_PA_EN                  GPIO_NUM_21

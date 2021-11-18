@@ -1,24 +1,6 @@
-/*
- * es8388.ino
- *
- *  Created on: 22.08.2021
- *      Author: PC
- */
-
-/*
- * http://www.everest-semi.com/pdf/ES8388%20DS.pdf
- */
-
 #include <Arduino.h>
 #include "es8388.h"
-#include <Wire.h>
-
-#ifdef ES8388_ENABLED
-
-
-/* ES8388 address */
-//#define ES8388_ADDR 0x20  /*!< 0x22:CE=1;0x20:CE=0*/
-#define ES8388_ADDR 0x10  /*!< 0x22:CE=1;0x20:CE=0*/
+#include "i2c_interface.h"
 
 
 /* ES8388 register */
@@ -86,43 +68,16 @@
 
 uint8_t ES8388_ReadReg(uint8_t reg)
 {
-    Wire.beginTransmission(ES8388_ADDR);
-    Wire.write(reg);
-    Wire.endTransmission(false);
-
-    uint8_t val = 0u;
-    if (1 == Wire.requestFrom(uint16_t(ES8388_ADDR), uint8_t(1), true))
-    {
-        val = Wire.read();
-    }
-    delay(1);
-
-    Wire.endTransmission(false);
-
-    delay(1);
-    //Serial.printf("ES8388_ReadReg 0x%02x = 0x%02x\n", reg, val);
-
-    return val;
+    return i2c_read_reg(ES8388_ADDR, reg);
 }
 
-bool ES8388_WriteReg(uint8_t reg, uint8_t val)
+void ES8388_WriteReg(uint8_t reg, uint8_t val)
 {
-    //Serial.printf("ES8388_WriteReg 0x%02x = 0x%02x\n", reg, val);
-    Wire.beginTransmission(ES8388_ADDR);
-    Wire.write(reg);
-    Wire.write(val);
-    delay(1);
-    return 0 == Wire.endTransmission(true);
+    i2c_write_reg(ES8388_ADDR, reg, val);
 }
 
-bool ES8388_begin(int sda, int scl, uint32_t frequency)
+bool ES8388_begin()
 {
-    delay(1);
-
-    bool ok = Wire.begin(sda, scl, frequency);
-
-    // Reset all registers, readback default as sanity check
-    //ok &= WriteReg(CHIP_AUDIO_RS, 0x123);
     delay(100);
 
     Serial.printf("0x00: 0x%02x\n", ES8388_ReadReg(ES8388_CONTROL1));
@@ -132,6 +87,7 @@ bool ES8388_begin(int sda, int scl, uint32_t frequency)
     ES8388_WriteReg(ES8388_CONTROL1, 0x06);
     ES8388_WriteReg(ES8388_CONTROL2, 0x50);
 
+    bool ok = true;
     ok &= (0x06 == ES8388_ReadReg(ES8388_CONTROL1));
     ok &= (0x50 == ES8388_ReadReg(ES8388_CONTROL2));
     return ok;
@@ -305,12 +261,7 @@ void ES8388_SetOUT2VOL(uint8_t vol)
 void ES8388_Setup()
 {
     Serial.printf("Connect to ES8388 codec... ");
-
-    while (not ES8388_begin(ES8388_PIN_SDA, ES8388_PIN_SCL, 400000))
-    {
-        Serial.printf("Failed!\n");
-        delay(1000);
-    }
+    ES8388_begin();
 
     ES8388_WriteReg(ES8388_CHIPPOWER, 0xFF);  //reset and stop es8388
 
@@ -349,37 +300,20 @@ void ES8388_Setup()
     ES8388_WriteReg(0x03, 0x00); // PdnAINL, PdinAINR, PdnADCL, PdnADCR, PdnMICB, PdnADCBiasgen, flashLP, Int1LP
 
 
-#if 0
-    /*
-     * Power Down DAC, Power up
-     * Analog Output for Bypass
-     */
-    ES8388_WriteReg(ES8388_DACPOWER, 0xFC);
-#else
-    /*
-     * Power up DAC / Analog Output
-     * for Record
-     */
+    // Power up DAC / Analog Output for Record
 
     // POWER UP LEFT/RIGHT DAC, enable LOUT1 ROUT1 and LOUT2 and ROUT2
     ES8388_WriteReg(ES8388_DACPOWER, 0x3C);   // 0011 1100
 
 
-#if 1
-    /*
-     * Select Analog input channel for ADC
-     */
+    // Select Analog input channel for ADC
     ES8388_WriteReg(ES8388_ADCCONTROL2, 0x80); // LINSEL , RINSEL , DSSEL , DSR
 
-    /* Select PGA Gain for ADC analog input */
+    // Select PGA Gain for ADC analog input
     ES8388_WriteReg(ES8388_ADCCONTROL1, 0x00); // PGA gain?
 
-    //ES8388_WriteReg(0x0C, 0x18); // DATSEL, ADCLRP, ADCWL, ADCFORMAT
-    //ES8388_WriteReg(0x0C, 0x40); // DATSEL, ADCLRP, ADCWL, ADCFORMAT
     ES8388_WriteReg(0x0C, 0x0C); // DATSEL, ADCLRP, ADCWL, ADCFORMAT
     ES8388_WriteReg(0x0D, 0x02); // ADCFsMode , ADCFsRatio
-    //ES8388_WriteReg(0x0D, (1<<5) + 0x03); // ADCFsMode , ADCFsRatio Hasan
-    //ES8388_WriteReg(0x0D, 0); // ADCFsMode , ADCFsRatio Hasan
 
     // Set ADC Digital Volume
     ES8388_SetADCVOL(0, 1.0f);
@@ -391,25 +325,19 @@ void ES8388_Setup()
 
     ES8388_WriteReg(0x17, 0x18); // DACLRSWAP, DACLRP, DACWL, DACFORMAT
     ES8388_WriteReg(0x18, 0x02); // DACFsMode , DACFsRatio
-#endif
 
 
-    /*
-     * Set ADC Digital Volume
-     */
+
+    // Set ADC Digital Volume
     ES8388_WriteReg(ES8388_DACCONTROL4, 0x00);
     ES8388_WriteReg(ES8388_DACCONTROL4, 0x00);
 
-
-    //ES8388_WriteReg(0x1B, (1<<5) + 0x03); // ADCFsMode , ADCFsRatio Hasan
-    //ES8388_WriteReg(0x1B, 0); // ADCFsMode , ADCFsRatio Hasan
-
-    /* UnMute DAC */
+    // UnMute DAC
     ES8388_WriteReg(ES8388_DACCONTROL3, 0x32); // 0011 0010
-#endif
+
     // Setup Mixer
-    ES8388_WriteReg(ES8388_DACCONTROL16, 0x09);//        ES8388_WriteReg(0x26, 0x00);
-    ES8388_WriteReg(ES8388_DACCONTROL17, 0xD0); // ES8388_DACCONTROL17
+    ES8388_WriteReg(ES8388_DACCONTROL16, 0x09);
+    ES8388_WriteReg(ES8388_DACCONTROL17, 0xD0);
     ES8388_WriteReg(ES8388_DACCONTROL18, 0x38);
     ES8388_WriteReg(ES8388_DACCONTROL19, 0x38);
     ES8388_WriteReg(ES8388_DACCONTROL20, 0xD0);
@@ -424,23 +352,11 @@ void ES8388_Setup()
 
     ES8388_SetMixInCh(2, 1);
 
-    //const bool lineIn = true;
-    // if ( lineIn ) {
-    //     ES8388_SetMicGain(5);
-    //     ES8388_SetInputCh(0);
-
-    // } else {
-    //     ES8388_SetMicGain(6);
-    //     ES8388_SetInputCh(0);
-    // }
-
     ES8388_SetMicGain(5);
     ES8388_SelectInput(ADC_CHANNEL_2);
     ES8388_SetIn2OoutVOL(0);
 
     Serial.printf("ES8388 setup finished!\n");
-    //es8388_read_range(0 , 53);
-
 }
 
 void program_defaults() {
@@ -498,8 +414,4 @@ void program_defaults() {
     ES8388_WriteReg(0x33, 0xaa);
     ES8388_WriteReg(0x34, 0xaa);    
 }
-
-
-#endif
-
 
