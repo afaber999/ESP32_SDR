@@ -88,30 +88,20 @@ void dsp_task_setup()
     // }
 
     // test_kiss_fft();
-
-    delay(100);
-    delay(100);
-    delay(100);
-    delay(100);
-    delay(100);
-    delay(100);
-    delay(100);
-    Serial.println("DSP TASK Delayed ......\n");
-
     if (!dsp_fft_init() ) {
         Serial.println("Failed to intialize DSP\n");
     }
     setup_i2s();
 }
 
-static int beat = 0;
+//static int beat = 0;
 
 void dsp_task_loop()
 {
-    if ( (beat % 100 )== 0) {
-        Serial.println("Still alive\n");
-    }
-    beat++;
+    // if ( (beat % 100 )== 0) {
+    //     Serial.println("Still alive\n");
+    // }
+    // beat++;
     
     //const bool usb = true;
     // DSP loop runs on core 0
@@ -335,7 +325,7 @@ void radio_loop()
             case '/':
                 mute = !mute;
                 ES8388_SetOUT1VOL(mute ? 0 : 33);
-                ES8388_SetOUT2VOL( 0);
+                ES8388_SetOUT2VOL(mute ? 0 : 33);
                 Serial.printf( "Mute set to: %d\n", mute);
             break;
         }
