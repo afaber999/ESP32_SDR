@@ -68,7 +68,7 @@
 #define ES8388_DACCONTROL14     0x24
 #define ES8388_DACCONTROL15     0x25
 #define ES8388_DACCONTROL16     0x26
-#define ES8388_DACCONTROL17     0x27
+#define ES8388_DACCONTROL17     0x27 // LD2LO, LI2LO, LI2LOVOL
 #define ES8388_DACCONTROL18     0x28
 #define ES8388_DACCONTROL19     0x29
 #define ES8388_DACCONTROL20     0x2a
@@ -95,8 +95,11 @@ uint8_t ES8388_ReadReg(uint8_t reg)
     {
         val = Wire.read();
     }
+    delay(1);
+
     Wire.endTransmission(false);
 
+    delay(1);
     //Serial.printf("ES8388_ReadReg 0x%02x = 0x%02x\n", reg, val);
 
     return val;
@@ -108,11 +111,14 @@ bool ES8388_WriteReg(uint8_t reg, uint8_t val)
     Wire.beginTransmission(ES8388_ADDR);
     Wire.write(reg);
     Wire.write(val);
+    delay(1);
     return 0 == Wire.endTransmission(true);
 }
 
 bool ES8388_begin(int sda, int scl, uint32_t frequency)
 {
+    delay(1);
+
     bool ok = Wire.begin(sda, scl, frequency);
 
     // Reset all registers, readback default as sanity check
@@ -133,6 +139,7 @@ bool ES8388_begin(int sda, int scl, uint32_t frequency)
 
 void es8388_read_range(uint8_t start, uint8_t end)
 {
+    delay(1);
     for (int i = start; i < end; i++)
     {
         uint8_t reg = 0;
@@ -432,9 +439,65 @@ void ES8388_Setup()
     ES8388_SetIn2OoutVOL(0);
 
     Serial.printf("ES8388 setup finished!\n");
-    es8388_read_range(0 , 53);
+    //es8388_read_range(0 , 53);
 
 }
 
+void program_defaults() {
+    ES8388_WriteReg(0x00, 0x05);
+    ES8388_WriteReg(0x01, 0x40);
+    ES8388_WriteReg(0x02, 0x00);
+    ES8388_WriteReg(0x03, 0x00);
+    ES8388_WriteReg(0x04, 0x3c);
+    ES8388_WriteReg(0x05, 0x00);
+    ES8388_WriteReg(0x06, 0x00);
+    ES8388_WriteReg(0x07, 0x7c);
+    ES8388_WriteReg(0x08, 0x00);
+    ES8388_WriteReg(0x09, 0x33);
+    ES8388_WriteReg(0x0a, 0x50);
+    ES8388_WriteReg(0x0b, 0x02);
+    ES8388_WriteReg(0x0c, 0x0c);
+    ES8388_WriteReg(0x0d, 0x02);
+    ES8388_WriteReg(0x0e, 0x30);
+    ES8388_WriteReg(0x0f, 0x20);
+    ES8388_WriteReg(0x10, 0x00);
+    ES8388_WriteReg(0x11, 0x00);
+    ES8388_WriteReg(0x12, 0x16);
+    ES8388_WriteReg(0x13, 0xb0);
+    ES8388_WriteReg(0x14, 0x32);
+    ES8388_WriteReg(0x15, 0x06);
+    ES8388_WriteReg(0x16, 0x00);
+    ES8388_WriteReg(0x17, 0x18);
+    ES8388_WriteReg(0x18, 0x02);
+    ES8388_WriteReg(0x19, 0x22);
+    ES8388_WriteReg(0x1a, 0x00);
+    ES8388_WriteReg(0x1b, 0xc0);
+    ES8388_WriteReg(0x1c, 0x08);
+    ES8388_WriteReg(0x1d, 0x00);
+    ES8388_WriteReg(0x1e, 0x1f);
+    ES8388_WriteReg(0x1f, 0xf7);
+    ES8388_WriteReg(0x20, 0xfd);
+    ES8388_WriteReg(0x21, 0xff);
+    ES8388_WriteReg(0x22, 0x1f);
+    ES8388_WriteReg(0x23, 0xf7);
+    ES8388_WriteReg(0x24, 0xfd);
+    ES8388_WriteReg(0x25, 0xff);
+    ES8388_WriteReg(0x26, 0x1b);
+    ES8388_WriteReg(0x27, 0xb8);
+    ES8388_WriteReg(0x28, 0x28);
+    ES8388_WriteReg(0x29, 0x28);
+    ES8388_WriteReg(0x2a, 0xb8);
+    ES8388_WriteReg(0x2b, 0x80);
+    ES8388_WriteReg(0x2c, 0x00);
+    ES8388_WriteReg(0x2d, 0x00);
+    ES8388_WriteReg(0x2e, 0x21);
+    ES8388_WriteReg(0x2f, 0x21);
+    ES8388_WriteReg(0x30, 0x21);
+    ES8388_WriteReg(0x31, 0x21);
+    ES8388_WriteReg(0x32, 0x00);
+    ES8388_WriteReg(0x33, 0xaa);
+    ES8388_WriteReg(0x34, 0xaa);    
+}
 #endif
+
 

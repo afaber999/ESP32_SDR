@@ -89,6 +89,15 @@ void dsp_task_setup()
 
     // test_kiss_fft();
 
+    delay(100);
+    delay(100);
+    delay(100);
+    delay(100);
+    delay(100);
+    delay(100);
+    delay(100);
+    Serial.println("DSP TASK Delayed ......\n");
+
     if (!dsp_fft_init() ) {
         Serial.println("Failed to intialize DSP\n");
     }
@@ -151,7 +160,7 @@ void radio_setup()
     btStop();
 
     Serial.begin(115200);
-    Serial.println("Start ESP32 SDR v0.2c... stay tuned");
+    Serial.println("Start ESP32 SDR v0.2d... stay tuned");
 
     i2c_init(I2C_SDA, I2C_SCL, 100000);
     has_si = i2c_scan() > 1;
@@ -319,6 +328,10 @@ void radio_loop()
                 //test_fft_in_psram();
             break;
             #endif
+            case 'd':
+                program_defaults();
+                Serial.println("programmed defaults\n");
+            break;
             case '/':
                 mute = !mute;
                 ES8388_SetOUT1VOL(mute ? 0 : 33);

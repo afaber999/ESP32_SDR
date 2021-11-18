@@ -20,7 +20,7 @@
 
     void ES8388_SetOUT1VOL(uint8_t vol);
     void ES8388_SetOUT2VOL(uint8_t vol);
-
+    void program_defaults();
 #endif
 
 #endif
