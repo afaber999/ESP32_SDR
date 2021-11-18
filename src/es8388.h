@@ -18,8 +18,8 @@
     void ES8388_SetMicGain(uint8_t gain);
     void ES8388_SelectInput(ES8388_INPUTS ch);
 
-    // void ES8388_SetOUT1VOL(uint8_t vol);
-    // void ES8388_SetOUT2VOL(uint8_t vol);
+    void ES8388_SetOUT1VOL(uint8_t vol);
+    void ES8388_SetOUT2VOL(uint8_t vol);
 
 #endif
 

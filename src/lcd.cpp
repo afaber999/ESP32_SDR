@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "lcd.h"
-#include "common.h"
+#include "i2c_interface.h"
 
 
 

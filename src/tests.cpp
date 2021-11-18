@@ -3,9 +3,63 @@
 #include <stdio.h>
 #include <math.h>
 #include "tests.h"
-#include "dsp.h"
+#include "dsp_fft.h"
 #include "kiss_fft.h"
 
+#ifdef USE_PSRAM
+    static void dump_info() {
+        Serial.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+        Serial.printf("ESP.getFreeHeap()    : %d\n", ESP.getFreeHeap());
+        Serial.printf("ESP.getMinFreeHeap() : %d\n", ESP.getMinFreeHeap());
+        Serial.printf("ESP.getHeapSize()    : %d\n", ESP.getHeapSize());
+        Serial.printf("ESP.getMaxAllocHeap(): %d\n", ESP.getMaxAllocHeap());
+        Serial.printf("Total PSRAM          : %d\n", ESP.getPsramSize());
+        Serial.printf("Free PSRAM           : %d\n", ESP.getFreePsram());
+        Serial.printf("Used PSRAM           : %d\n", ESP.getPsramSize() - ESP.getFreePsram());
+        Serial.println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+    }
+
+    void test_fft_in_psram()
+    {
+        const uint32_t nfft = 2048;
+
+        Serial.printf(" ------------- TEST FFT IN PSRAM ------------ \n");
+
+        dump_info();
+        auto time1 = esp_timer_get_time();
+
+        auto fft_buf1 = (kiss_fft_cpx*)ps_malloc(sizeof( kiss_fft_cpx ) * nfft );
+        auto fft_buf2 = (kiss_fft_cpx*)ps_malloc(sizeof( kiss_fft_cpx ) * nfft );
+
+        auto time2 = esp_timer_get_time();
+
+        auto fft_cfg_fwd = kiss_fft_alloc(nfft, 0, NULL, NULL);
+        auto fft_cfg_rev = kiss_fft_alloc(nfft, 1, NULL, NULL);
+
+        float delta_phase = 6.28f / 30.0f;
+
+        float phase = delta_phase;
+
+        for ( auto i=0; i< nfft; i++ ) {
+            fft_buf1[i].r = sinf( phase );
+            fft_buf1[i].i = cosf( phase );
+            phase += delta_phase;
+        }
+
+        kiss_fft(fft_cfg_fwd , fft_buf1 , fft_buf2);
+        kiss_fft(fft_cfg_rev, fft_buf2, fft_buf1);
+
+        dump_info();
+        free(fft_buf1);
+        free(fft_buf2);
+
+        dump_info();
+
+        auto time3 = esp_timer_get_time();
+        Serial.printf("Time1 %lld time2 = %lld\n", time2 -time1, time3 - time2);
+        dump_info();
+    }
+#endif
 
 // const uint32_t nfft = 2048;
 // static kiss_fft_cpx fft_in[nfft];

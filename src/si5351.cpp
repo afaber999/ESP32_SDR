@@ -113,7 +113,7 @@ Control Si5351:
 #include <math.h>
 #include <Wire.h>
 #include "si5351.h"
-#include "common.h"
+#include "i2c_interface.h"
 
 #define I2C_VFO		0x60	// I2C address
 
@@ -168,7 +168,7 @@ vfo_t vfo[2];				// 0: clk0 and clk1     1: clk2
 // Set up MSN PLL divider for vfo[i], assuming MSN has been set in vfo[i]
 // Optimize for speed, this may be called with short intervals
 // See also SiLabs AN619 section 3.2
-void si_setmsn(uint8_t i)
+static void si_setmsn(uint8_t i)
 {
 	uint8_t  data[16];		// I2C trx buffer
 	uint32_t P1, P2;		// MSN parameters
@@ -203,7 +203,7 @@ void si_setmsn(uint8_t i)
 // Set up registers with MS and R divider for vfo[i], assuming values have been set in vfo[i]
 // In this implementation we only use integer mode, i.e. b=0 and P3=1
 // See also SiLabs AN619 section 4.1
-void si_setmsi(uint8_t i)
+static void si_setmsi(uint8_t i)
 {
 	uint8_t data[16];		// I2C trx buffer
 	uint32_t P1;

@@ -61,4 +61,6 @@ static const uint32_t FFT_SAMPLES = 2048;
 #define PIN_ROT_UP (PIN_K3)
 #define PIN_ROT_DOWN (PIN_K4)
 
+//#define USE_PSRAM
+
 #endif /* CONFIG_H_ */

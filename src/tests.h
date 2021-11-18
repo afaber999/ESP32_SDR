@@ -5,4 +5,8 @@
 // void sin_performance_test(int loops);
 // void test_kiss_fft();
 
+#ifdef USE_PSRAM
+    void test_fft_in_psram();
+#endif
+
 #endif

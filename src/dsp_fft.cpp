@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "dsp.h"
+#include "dsp_fft.h"
 #include "filters.h"
 #include "post_filter.h"
 #include "kiss_fft.h"
 #include "config.h"
+
 
 
 static kiss_fft_cpx fft_in[FFT_SAMPLES];
@@ -41,12 +42,12 @@ void select_agc_mode(AGC_MODES mode) {
 auto fft_cfg_fwd = kiss_fft_alloc(FFT_SAMPLES, 0, NULL, NULL);
 auto fft_cfg_rev = kiss_fft_alloc(FFT_SAMPLES, 1, NULL, NULL);
 
-bool dsp_init() {
+bool dsp_fft_init() {
     post_filter_select(SSB_3000);
     return ( 2 * DMA_SAMPLES == FFT_SAMPLES);
 }
 
-void dsp_demod(int16_t* psamples, DEMOD_MODE mode) {
+void dsp_fft_demod(int16_t* psamples, DEMOD_MODE mode) {
 
     // overlap and add
     int idx = FFT_SAMPLES / 2;
@@ -71,10 +72,19 @@ void dsp_demod(int16_t* psamples, DEMOD_MODE mode) {
 
     kiss_fft(fft_cfg_rev, fft_proc, fft_out);
 
-    // Overlap and add, take first half of FFT output buffer
-    for ( auto i = 0; i < FFT_SAMPLES / 2; i++ ) {
-        auto audio_out = (int16_t)(fft_out[i].r + fft_out[i].i) * ( 16384.0f * 0.5f /(float)FFT_SAMPLES );
-        *psamples++ = audio_out;
-        *psamples++ = audio_out;
+    switch (mode) {
+        case DEMOD_AM:
+        case DEMOD_CWL:
+        case DEMOD_CWU:
+        case DEMOD_FM:
+        case DEMOD_LSB:
+        case DEMOD_USB:
+            // Overlap and add, take first half of FFT output buffer
+            for ( auto i = 0; i < FFT_SAMPLES / 2; i++ ) {
+                auto audio_out = (int16_t)(fft_out[i].r + fft_out[i].i) * ( 16384.0f * 0.5f /(float)FFT_SAMPLES );
+                *psamples++ = audio_out;
+                *psamples++ = audio_out;
+            }
+        break;
     }
 }

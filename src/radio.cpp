@@ -4,16 +4,19 @@
 
 #include "config.h"
 #include "i2s_interface.h"
+#include "i2c_interface.h"
 #include "es8388.h"
-#include "i2c_scanner.h"
 #include "si5351.h"
-#include "dsp.h"
+#include "dsp_fft.h"
 #include "tests.h"
 #include "post_filter.h"
 #include "hmi.h"
 #include "radio.h"
 #include "push_button.h"
 #include "kiss_fft.h"
+
+bool mute;
+bool has_si = false;
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
@@ -45,10 +48,13 @@ static void dump_info() {
     Serial.printf("ESP.getMinFreeHeap() : %d\n", ESP.getMinFreeHeap());
     Serial.printf("ESP.getHeapSize()    : %d\n", ESP.getHeapSize());
     Serial.printf("ESP.getMaxAllocHeap(): %d\n", ESP.getMaxAllocHeap());
-    Serial.printf("Total PSRAM          : %d\n", ESP.getPsramSize());
-    Serial.printf("Free PSRAM           : %d\n", ESP.getFreePsram());
+
+    #ifdef USE_PSRAM
+        Serial.printf("Total PSRAM          : %d\n", ESP.getPsramSize());
+        Serial.printf("Free PSRAM           : %d\n", ESP.getFreePsram());
+    #endif
+
     Serial.printf("ES8388 REGISTER DUMP\n");
-    //scanner_scan(I2C_SDA, I2C_SCL, 400000);
     es8388_read_range(0, 53);
 
     Serial.printf("PTT button %d\n", ptt_button.is_pressed());
@@ -83,16 +89,22 @@ void dsp_task_setup()
 
     // test_kiss_fft();
 
-    if (!dsp_init() ) {
+    if (!dsp_fft_init() ) {
         Serial.println("Failed to intialize DSP\n");
     }
     setup_i2s();
 }
 
+static int beat = 0;
 
 void dsp_task_loop()
 {
-    const bool usb = true;
+    if ( (beat % 100 )== 0) {
+        Serial.println("Still alive\n");
+    }
+    beat++;
+    
+    //const bool usb = true;
     // DSP loop runs on core 0
 
     auto time1 = esp_timer_get_time();
@@ -117,7 +129,7 @@ void dsp_task_loop()
         phase2 = (phase2 + 7 ) % sin_table_size;
     }
 
-    dsp_demod(samples, DEMOD_LSB);
+//    dsp_fft_demod(samples, DEMOD_LSB);
 
     // send data block to DAC
     if (!i2s_write_buffer(samples) ) {
@@ -141,12 +153,18 @@ void radio_setup()
     Serial.begin(115200);
     Serial.println("Start ESP32 SDR v0.2c... stay tuned");
 
+    i2c_init(I2C_SDA, I2C_SCL, 100000);
+    has_si = i2c_scan() > 1;
+    Serial.printf("Has SI %d\n", has_si);
+
     // contol I2C from core 1
     ES8388_Setup();
     ES8388_SelectInput(ADC_CHANNEL_2);
     ES8388_SetMicGain(3);    
 
-    si_init();
+    if ( has_si ) {
+        si_init();
+    }
     hmi_init();
 
     // ENABLE LOUDSPEAKER (SET CTRL = GPIO32 TO HIGH)
@@ -172,7 +190,10 @@ void radio_setup()
 void radio_loop()
 {
     // Araduino looop, runs on core 1
-    si_evaluate();
+    if ( has_si ) {
+        si_evaluate();
+    }
+    
     if (Serial.available() > 0) {
         auto bt  = Serial.read();
         switch ( bt ) {
@@ -207,7 +228,7 @@ void radio_loop()
                 Serial.printf("Time1 %lld time2 = %lld\n", last_time2 -last_time1, last_time3 - last_time2);
             break;
             case 'i':
-                scanner_scan(I2C_SDA, I2C_SCL, 400000);
+                i2c_scan();
             break;
             case 't':
                 show_times = !show_times;
@@ -292,7 +313,18 @@ void radio_loop()
             case 'q':
                 Serial.printf("Current timer %d\n", timer_cnt);
             break;
+            #ifdef USE_PSRAM
+            case 'z':
 
+                //test_fft_in_psram();
+            break;
+            #endif
+            case '/':
+                mute = !mute;
+                ES8388_SetOUT1VOL(mute ? 0 : 33);
+                ES8388_SetOUT2VOL( 0);
+                Serial.printf( "Mute set to: %d\n", mute);
+            break;
         }
     }
 

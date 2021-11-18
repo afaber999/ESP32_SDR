@@ -33,7 +33,7 @@
 
 #include "lcd.h"
 #include "hmi.h"
-#include "dsp.h"
+#include "dsp_fft.h"
 #include "si5351.h"
 #include "config.h"
 // TEMP HERE
