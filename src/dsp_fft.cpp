@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <stdio.h>
 #include <math.h>
-
+#include <algorithm>
 #include "dsp_fft.h"
 #include "filters.h"
 #include "post_filter.h"
@@ -58,6 +58,9 @@ void dsp_fft_demod(int16_t* psamples, DEMOD_MODE mode) {
         fft_in[n] = fft_in[idx];
         fft_in[idx].r = (float)*new_samples++ * (1.0f / 32767.0f);
         fft_in[idx].i = (float)*new_samples++ * (1.0f / 32767.0f);
+
+        peak_i = fmaxf( peak_i, fft_in[idx].r);
+        peak_q = fmaxf( peak_q, fft_in[idx].i);
         idx++;
     }
 
@@ -84,6 +87,15 @@ void dsp_fft_demod(int16_t* psamples, DEMOD_MODE mode) {
                 auto audio_out = (int16_t)(fft_out[i].r + fft_out[i].i) * ( 16384.0f * 0.5f /(float)FFT_SAMPLES );
                 *psamples++ = audio_out;
                 *psamples++ = audio_out;
+            }
+        break;
+        
+        default:
+        case DEMOD_NONE:
+            // Overlap and add, take first half of FFT output buffer
+            for ( auto i = 0; i < FFT_SAMPLES / 2; i++ ) {
+                *psamples++ = (int16_t)(fft_out[i].r) * ( 32767.0f /(float)FFT_SAMPLES );
+                *psamples++ = (int16_t)(fft_out[i].i) * ( 32767.0f /(float)FFT_SAMPLES );
             }
         break;
     }

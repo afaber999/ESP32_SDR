@@ -8,6 +8,7 @@ enum AGC_MODES {
 };
 
 enum DEMOD_MODE {
+    DEMOD_NONE,
     DEMOD_LSB,
     DEMOD_USB,
     DEMOD_CWL,

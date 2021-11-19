@@ -34,12 +34,6 @@ bool i2s_read_buffer(int16_t* data)
 }
 
 
-#define I2S_MCLK_PIN ES8388_PIN_MCLK
-#define I2S_BCLK_PIN ES8388_PIN_SCLK
-#define I2S_WCLK_PIN ES8388_PIN_LRCK
-#define I2S_DOUT_PIN ES8388_PIN_DIN
-#define I2S_DIN_PIN ES8388_PIN_DOUT
-
 i2s_config_t i2s_configuration =
 {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX), // | I2S_MODE_DAC_BUILT_IN
@@ -48,8 +42,8 @@ i2s_config_t i2s_configuration =
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
     .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
     .intr_alloc_flags = 0, // default interrupt priority
-    .dma_buf_count = DMA_BUFFERS,  // 32 buffer
-    .dma_buf_len = DMA_SAMPLES,  // each buffer 2 x 2 x 256 = 1k
+    .dma_buf_count = DMA_BUFFERS,
+    .dma_buf_len = DMA_SAMPLES,   // each buffer 2 x 2 x 1024 = 4k
     .use_apll = true,
 };
 
@@ -67,8 +61,8 @@ void setup_i2s()
     i2s_set_pin(I2S_NUM_0, &pins);
     i2s_set_sample_rates(i2s_port_number, SAMPLE_RATE);
     i2s_start(i2s_port_number);
-#ifdef ES8388_ENABLED
+
+    // for es8388??
     REG_WRITE(PIN_CTRL, 0xFFFFFFF0);
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
-#endif
 }

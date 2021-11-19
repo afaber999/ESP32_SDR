@@ -17,6 +17,9 @@
 
 bool mute;
 bool has_si = false;
+bool generate_tone = false;
+bool bypass_mode = false;
+static DEMOD_MODE demod_mode = DEMOD_NONE;
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
@@ -115,20 +118,26 @@ void dsp_task_loop()
         Serial.println( "Can't read ADC samples\n");
     }
 
+
+
     auto time2 = esp_timer_get_time();
 
     uint32_t phase1 = 0;
     uint32_t phase2 = 0;
     
-    // generate test pattern
-    for ( auto i =0; i< DMA_SAMPLES; i++ ) {
-        samples[2*i + 0 ] =  (int16_t)((sin_table[phase1 ]) * 0.5f * 32767.0f );
-        samples[2*i + 1 ] =  (int16_t)((sin_table[phase1 ] + sin_table[phase2 ]) * 0.4 * 32767.0f);
-        phase1 = (phase1 + 3 ) % sin_table_size;
-        phase2 = (phase2 + 7 ) % sin_table_size;
+    if (generate_tone) {
+        // generate test pattern
+        for ( auto i =0; i< DMA_SAMPLES; i++ ) {
+            samples[2*i + 0 ] =  (int16_t)((sin_table[phase1 ]) * 0.5f * 32767.0f );
+            samples[2*i + 1 ] =  (int16_t)((sin_table[phase1 ] + sin_table[phase2 ]) * 0.4 * 32767.0f);
+            phase1 = (phase1 + 3 ) % sin_table_size;
+            phase2 = (phase2 + 7 ) % sin_table_size;
+        }
     }
 
-//    dsp_fft_demod(samples, DEMOD_LSB);
+    if ( !bypass_mode ) {
+        dsp_fft_demod(samples, demod_mode);
+    }
 
     // send data block to DAC
     if (!i2s_write_buffer(samples) ) {
@@ -140,6 +149,7 @@ void dsp_task_loop()
     last_time1 = time1;
     last_time2 = time2;
     last_time3 = time3;
+    loop_cnt_1hz += DMA_SAMPLES;
 }
 
 void radio_setup()
@@ -319,8 +329,8 @@ void radio_loop()
             break;
             #endif
             case 'd':
-                program_defaults();
-                Serial.println("programmed defaults\n");
+                ES8388_SetupCodec();
+                Serial.println("Re-setup codec\n");
             break;
             case '/':
                 mute = !mute;
@@ -328,6 +338,15 @@ void radio_loop()
                 ES8388_SetOUT2VOL(mute ? 0 : 33);
                 Serial.printf( "Mute set to: %d\n", mute);
             break;
+            case 'g':
+                generate_tone = !generate_tone;
+                Serial.printf( "Generate tone set to : %d\n", generate_tone);
+            break;     
+            case 'b':
+                bypass_mode = !bypass_mode;
+                Serial.printf( "Bypass mode tone set to : %d\n", bypass_mode);
+            break;     
+                   
         }
     }
 
