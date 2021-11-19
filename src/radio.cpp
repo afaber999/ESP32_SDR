@@ -168,8 +168,8 @@ void radio_setup()
 
     // contol I2C from core 1
     ES8388_Setup();
-    ES8388_SelectInput(ADC_CHANNEL_2);
-    ES8388_SetMicGain(3);    
+    ES8388_SelectInput(ADC_CHANNEL_1);
+    ES8388_SetMicGain(0);
 
     if ( has_si ) {
         si_init();
@@ -209,22 +209,18 @@ void radio_loop()
 
             case '1':
                 Serial.println("Switch to ADC input 1: ");
-                //ES8388_SetMicGain(4);
                 ES8388_SelectInput(ADC_CHANNEL_1);
             break;
             case '2':
                 Serial.println("Switch to ADC input 2: ");
-                //ES8388_SetMicGain(5);
                 ES8388_SelectInput(ADC_CHANNEL_2);
             break;
             case '3':
                 Serial.println("Switch to ADC DIFF input 1: ");
-                //ES8388_SetMicGain(5);
                 ES8388_SelectInput(ADC_CHANNEL_DIFF_1);
             break;
             case '4':
                 Serial.println("Switch to ADC DIFF input 2: ");
-                //ES8388_SetMicGain(5);
                 ES8388_SelectInput(ADC_CHANNEL_DIFF_2);
             break;
             case 'x':
