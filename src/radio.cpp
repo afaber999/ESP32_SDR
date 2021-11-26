@@ -25,6 +25,7 @@ static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
 static volatile int64_t last_time2;
 static volatile int64_t last_time3;
+static volatile int64_t last_time9;
 static volatile bool show_times = false;
 static volatile bool is_usb = true;
 
@@ -97,7 +98,7 @@ void dsp_task_setup()
     setup_i2s();
 }
 
-//static int beat = 0;
+static int beat = 0;
 
 void dsp_task_loop()
 {
@@ -109,6 +110,7 @@ void dsp_task_loop()
     //const bool usb = true;
     // DSP loop runs on core 0
 
+    last_time9 = esp_timer_get_time() - last_time1;
     auto time1 = esp_timer_get_time();
 
     // get sample block from ADC (DMA_SAMPLES)
@@ -119,6 +121,14 @@ void dsp_task_loop()
     }
 
 
+    if ( beat == 1000) {
+        Serial.println("Phase/amp check dump\n");
+        for (auto i =0; i< DMA_SAMPLES; i++ ) {
+            Serial.printf( "%d,%d,%d\n",i, samples[2*i], samples[2*i + 1]);
+        }
+        Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+    }
+    beat++;
 
     auto time2 = esp_timer_get_time();
 
@@ -325,7 +335,8 @@ void radio_loop()
             break;
             #endif
             case 'd':
-                ES8388_SetupCodec();
+                //ES8388_SetupCodec();
+                program_defaults();
                 Serial.println("Re-setup codec\n");
             break;
             case '/':
@@ -352,7 +363,7 @@ void radio_loop()
         auto pk_q = get_peak_q();
         clear_peak();
 
-        //Serial.printf("Time1 %lld time2 = %lld\n", last_time2 -last_time1, last_time3 - last_time2);
+        Serial.printf("Time1 %lld time2 = %lld period %lld\n", last_time2 -last_time1, last_time3 - last_time2, last_time9);
         Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
         loop_cnt_1hz = 0;
         //hmi_show_keys();

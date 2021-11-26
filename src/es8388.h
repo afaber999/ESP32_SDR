@@ -25,6 +25,7 @@ void ES8388_SetupCodec();
 void ES8388_Standby();
 void ES8388_Resume();
 
+void program_defaults();
 
 #endif
 

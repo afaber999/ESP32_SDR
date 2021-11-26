@@ -27,7 +27,7 @@ bool i2s_read_buffer(int16_t* data)
     static size_t bytes_read = 0;    
     i2s_read(   i2s_port_number, 
                 (char *)data, 
-                2 * sizeof(int16_t) *DMA_SAMPLES, 
+                2 * sizeof(int16_t) * DMA_SAMPLES, 
                 &bytes_read, 
                 portMAX_DELAY);
     return ( bytes_read == DMA_SAMPLES * 2 * sizeof(uint16_t));

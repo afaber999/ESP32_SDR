@@ -78,10 +78,6 @@ void ES8388_WriteReg(uint8_t reg, uint8_t val)
     i2c_write_reg(ES8388_ADDR, reg, val);
 }
 
-bool ES8388_begin()
-{
-
-}
 
 void es8388_read_range(uint8_t start, uint8_t end)
 {
@@ -263,35 +259,102 @@ void ES8388_Setup()
     Serial.printf("ES8388 setup finished!\n");
 }
 
-void program_defaults() {
-    ES8388_WriteReg(0x00, 0x05); // PLAY AND RECORD MODE
-    ES8388_WriteReg(0x01, 0x40); // POWER UP ANALOG BIAS
-    ES8388_WriteReg(ES8388_CHIPPOWER, 0x00);
-    ES8388_WriteReg(ES8388_ADCPOWER, 0x00); // POWER UP ADC ANALOG INPUT
-    ES8388_WriteReg(ES8388_DACPOWER, 0x3c); // POWER UP DAC AND ENABLE LOUT/ROUT
-    // DEFAULT ES8388_WriteReg(ES8388_CHIPLOPOW1, 0x00);
-    // DEFAULT ES8388_WriteReg(ES8388_CHIPLOPOW2, 0x00);
-    ES8388_WriteReg(ES8388_ANAVOLMANAG, 0x7c);
-    ES8388_WriteReg(ES8388_MASTERMODE, 0x00); // SLAVE MODE
+// void program_defaults() {
+//     ES8388_WriteReg(0x00, 0x05); // PLAY AND RECORD MODE
+//     ES8388_WriteReg(0x01, 0x40); // POWER UP ANALOG BIAS
+//     ES8388_WriteReg(ES8388_CHIPPOWER, 0x00);
+//     ES8388_WriteReg(ES8388_ADCPOWER, 0x00); // POWER UP ADC ANALOG INPUT
+//     ES8388_WriteReg(ES8388_DACPOWER, 0x3c); // POWER UP DAC AND ENABLE LOUT/ROUT
+//     // DEFAULT ES8388_WriteReg(ES8388_CHIPLOPOW1, 0x00);
+//     // DEFAULT ES8388_WriteReg(ES8388_CHIPLOPOW2, 0x00);
+//     ES8388_WriteReg(ES8388_ANAVOLMANAG, 0x7c);
+//     ES8388_WriteReg(ES8388_MASTERMODE, 0x00); // SLAVE MODE
 
-    ES8388_WriteReg(ES8388_ADCCONTROL1, 0x33);  
-    ES8388_WriteReg(ES8388_ADCCONTROL2, 0x50);
+//     ES8388_WriteReg(ES8388_ADCCONTROL1, 0x33);  
+//     ES8388_WriteReg(ES8388_ADCCONTROL2, 0x50);
+//     ES8388_WriteReg(0x0b, 0x02);
+//     ES8388_WriteReg(ES8388_ADCCONTROL4, 0x0c);
+//     ES8388_WriteReg(ES8388_ADCCONTROL5, 0x02);
+//     ES8388_WriteReg(0x0e, 0x30);
+//     ES8388_WriteReg(0x0f, 0x20);
+
+//     ES8388_WriteReg(ES8388_ADCCONTROL8, 0x00);
+//     ES8388_WriteReg(ES8388_ADCCONTROL9, 0x00);
+
+//     // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL10, 0x16); // ALC OFF, 
+//     // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL11, 0xb0);
+//     // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL12, 0x32);
+//     // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL13, 0x06);
+//     // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL14, 0x00);
+
+//     ES8388_WriteReg(ES8388_DACCONTROL1, 0x18);
+//     ES8388_WriteReg(0x18, 0x02);
+//     ES8388_WriteReg(0x19, 0x22);
+//     ES8388_WriteReg(0x1a, 0x00);
+//     ES8388_WriteReg(0x1b, 0xc0);
+//     ES8388_WriteReg(0x1c, 0x08);
+//     ES8388_WriteReg(0x1d, 0x00);
+//     ES8388_WriteReg(0x1e, 0x1f);
+//     ES8388_WriteReg(0x1f, 0xf7);
+//     ES8388_WriteReg(0x20, 0xfd);
+//     ES8388_WriteReg(0x21, 0xff);
+//     ES8388_WriteReg(0x22, 0x1f);
+//     ES8388_WriteReg(0x23, 0xf7);
+//     ES8388_WriteReg(0x24, 0xfd);
+//     ES8388_WriteReg(0x25, 0xff);
+//     ES8388_WriteReg(0x26, 0x1b);
+
+//     ES8388_WriteReg(ES8388_DACCONTROL17, 0xb8);
+
+//     // DEFAULT ES8388_WriteReg(ES8388_DACCONTROL18, 0x28);
+//     // DEFAULT ES8388_WriteReg(ES8388_DACCONTROL19, 0x28);
+
+//     ES8388_WriteReg(ES8388_DACCONTROL20, 0xb8); // 1011 1000 
+
+//     ES8388_WriteReg(ES8388_DACCONTROL21, 0x80); // DACLRC = ADLCR DAC LRCK 
+
+//     ES8388_WriteReg(ES8388_DACCONTROL22, 0x00); // DC offset 0
+
+//     ES8388_WriteReg(ES8388_DACCONTROL23, 0x00); // VROI 1.5k VREF
+
+//     ES8388_WriteReg(ES8388_DACCONTROL24, 0x21); // LOUT1VOL -4.5 dB
+//     ES8388_WriteReg(ES8388_DACCONTROL25, 0x21); // ROUT1VOL -4.5 dB
+
+//     ES8388_WriteReg(ES8388_DACCONTROL26, 0x21); // LOUT2VOL -4.5 dB
+//     ES8388_WriteReg(ES8388_DACCONTROL27, 0x21); // ROUT2VOL -4.5 dB
+
+//     // DEFAULLTS
+//     // ES8388_WriteReg(ES8388_DACCONTROL28, 0x00);
+//     // ES8388_WriteReg(ES8388_DACCONTROL29, 0xaa);
+//     // ES8388_WriteReg(ES8388_DACCONTROL30, 0xaa);    
+// }
+
+
+void program_defaults() {
+    ES8388_WriteReg(0x00, 0x05);
+    ES8388_WriteReg(0x01, 0x40);
+    ES8388_WriteReg(0x02, 0x00);
+    ES8388_WriteReg(0x03, 0x00);
+    ES8388_WriteReg(0x04, 0x3c);
+    ES8388_WriteReg(0x05, 0x00);
+    ES8388_WriteReg(0x06, 0x00);
+    ES8388_WriteReg(0x07, 0x7c);
+    ES8388_WriteReg(0x08, 0x00);
+    ES8388_WriteReg(0x09, 0x33);
+    ES8388_WriteReg(0x0a, 0x50);
     ES8388_WriteReg(0x0b, 0x02);
-    ES8388_WriteReg(ES8388_ADCCONTROL4, 0x0c);
-    ES8388_WriteReg(ES8388_ADCCONTROL5, 0x02);
+    ES8388_WriteReg(0x0c, 0x0c);
+    ES8388_WriteReg(0x0d, 0x02);
     ES8388_WriteReg(0x0e, 0x30);
     ES8388_WriteReg(0x0f, 0x20);
-
-    ES8388_WriteReg(ES8388_ADCCONTROL8, 0x00);
-    ES8388_WriteReg(ES8388_ADCCONTROL9, 0x00);
-
-    // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL10, 0x16); // ALC OFF, 
-    // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL11, 0xb0);
-    // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL12, 0x32);
-    // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL13, 0x06);
-    // DEFAULT ES8388_WriteReg(ES8388_ADCCONTROL14, 0x00);
-
-    ES8388_WriteReg(ES8388_DACCONTROL1, 0x18);
+    ES8388_WriteReg(0x10, 0x00);
+    ES8388_WriteReg(0x11, 0x00);
+    ES8388_WriteReg(0x12, 0x16);
+    ES8388_WriteReg(0x13, 0xb0);
+    ES8388_WriteReg(0x14, 0x32);
+    ES8388_WriteReg(0x15, 0x06);
+    ES8388_WriteReg(0x16, 0x00);
+    ES8388_WriteReg(0x17, 0x18);
     ES8388_WriteReg(0x18, 0x02);
     ES8388_WriteReg(0x19, 0x22);
     ES8388_WriteReg(0x1a, 0x00);
@@ -307,29 +370,18 @@ void program_defaults() {
     ES8388_WriteReg(0x24, 0xfd);
     ES8388_WriteReg(0x25, 0xff);
     ES8388_WriteReg(0x26, 0x1b);
-
-    ES8388_WriteReg(ES8388_DACCONTROL17, 0xb8);
-
-    // DEFAULT ES8388_WriteReg(ES8388_DACCONTROL18, 0x28);
-    // DEFAULT ES8388_WriteReg(ES8388_DACCONTROL19, 0x28);
-
-    ES8388_WriteReg(ES8388_DACCONTROL20, 0xb8); // 1011 1000 
-
-    ES8388_WriteReg(ES8388_DACCONTROL21, 0x80); // DACLRC = ADLCR DAC LRCK 
-
-    ES8388_WriteReg(ES8388_DACCONTROL22, 0x00); // DC offset 0
-
-    ES8388_WriteReg(ES8388_DACCONTROL23, 0x00); // VROI 1.5k VREF
-
-    ES8388_WriteReg(ES8388_DACCONTROL24, 0x21); // LOUT1VOL -4.5 dB
-    ES8388_WriteReg(ES8388_DACCONTROL25, 0x21); // ROUT1VOL -4.5 dB
-
-    ES8388_WriteReg(ES8388_DACCONTROL26, 0x21); // LOUT2VOL -4.5 dB
-    ES8388_WriteReg(ES8388_DACCONTROL27, 0x21); // ROUT2VOL -4.5 dB
-
-    // DEFAULLTS
-    // ES8388_WriteReg(ES8388_DACCONTROL28, 0x00);
-    // ES8388_WriteReg(ES8388_DACCONTROL29, 0xaa);
-    // ES8388_WriteReg(ES8388_DACCONTROL30, 0xaa);    
+    ES8388_WriteReg(0x27, 0xb8);
+    ES8388_WriteReg(0x28, 0x28);
+    ES8388_WriteReg(0x29, 0x28);
+    ES8388_WriteReg(0x2a, 0xb8);
+    ES8388_WriteReg(0x2b, 0x80);
+    ES8388_WriteReg(0x2c, 0x00);
+    ES8388_WriteReg(0x2d, 0x00);
+    ES8388_WriteReg(0x2e, 0x21);
+    ES8388_WriteReg(0x2f, 0x21);
+    ES8388_WriteReg(0x30, 0x21);
+    ES8388_WriteReg(0x31, 0x21);
+    ES8388_WriteReg(0x32, 0x00);
+    ES8388_WriteReg(0x33, 0xaa);
+    ES8388_WriteReg(0x34, 0xaa);    
 }
-
