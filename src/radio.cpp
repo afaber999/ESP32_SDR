@@ -19,12 +19,14 @@ bool mute;
 bool has_si = false;
 bool generate_tone = false;
 bool bypass_mode = false;
-static DEMOD_MODE demod_mode = DEMOD_NONE;
+//static DEMOD_MODE demod_mode = DEMOD_NONE;
+static volatile DEMOD_MODE demod_mode = DEMOD_USB;
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;
 static volatile int64_t last_time2;
 static volatile int64_t last_time3;
+static volatile int64_t last_time4;
 static volatile int64_t last_time9;
 static volatile bool show_times = false;
 static volatile bool is_usb = true;
@@ -120,14 +122,13 @@ void dsp_task_loop()
         Serial.println( "Can't read ADC samples\n");
     }
 
-
-    if ( beat == 1000) {
-        Serial.println("Phase/amp check dump\n");
-        for (auto i =0; i< DMA_SAMPLES; i++ ) {
-            Serial.printf( "%d,%d,%d\n",i, samples[2*i], samples[2*i + 1]);
-        }
-        Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-    }
+    // if ( beat == 1000) {
+    //     Serial.println("Phase/amp check dump\n");
+    //     for (auto i =0; i< DMA_SAMPLES; i++ ) {
+    //         Serial.printf( "%d,%d,%d\n",i, samples[2*i], samples[2*i + 1]);
+    //     }
+    //     Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
+    // }
     beat++;
 
     auto time2 = esp_timer_get_time();
@@ -144,21 +145,22 @@ void dsp_task_loop()
             phase2 = (phase2 + 7 ) % sin_table_size;
         }
     }
-
+    
     if ( !bypass_mode ) {
-        dsp_fft_demod(samples, demod_mode);
+        dsp_fft_demod(samples, demod_mode, -618);
     }
+    auto time3 = esp_timer_get_time();
 
     // send data block to DAC
     if (!i2s_write_buffer(samples) ) {
-        Serial.println( "Can't write DAC samples\n");
+        Serial.println( "ERROR: can't write samples to DAC\n");
     }
-
-    auto time3 = esp_timer_get_time();
+    auto time4 = esp_timer_get_time();
 
     last_time1 = time1;
     last_time2 = time2;
     last_time3 = time3;
+    last_time4 = time4;
     loop_cnt_1hz += DMA_SAMPLES;
 }
 
@@ -178,7 +180,7 @@ void radio_setup()
 
     // contol I2C from core 1
     ES8388_Setup();
-    ES8388_SelectInput(ADC_CHANNEL_1);
+    ES8388_SelectInput(ADC_CHANNEL_2);
     ES8388_SetMicGain(0);
 
     if ( has_si ) {
@@ -240,7 +242,7 @@ void radio_loop()
 
             case 'r':
                 dump_info();
-                Serial.printf("Time1 %lld time2 = %lld\n", last_time2 -last_time1, last_time3 - last_time2);
+                Serial.printf("input:%lld processing:%lld output:%lld \n", last_time2 -last_time1, last_time3 - last_time2, last_time4 - last_time3);
             break;
             case 'i':
                 i2c_scan();
@@ -334,11 +336,6 @@ void radio_loop()
                 //test_fft_in_psram();
             break;
             #endif
-            case 'd':
-                //ES8388_SetupCodec();
-                program_defaults();
-                Serial.println("Re-setup codec\n");
-            break;
             case '/':
                 mute = !mute;
                 ES8388_SetOUT1VOL(mute ? 0 : 33);
@@ -354,6 +351,32 @@ void radio_loop()
                 Serial.printf( "Bypass mode tone set to : %d\n", bypass_mode);
             break;     
                    
+            case 'p': {
+                Serial.println("Set passband 2..9 ");
+                while (Serial.available() ==0 ) {
+                    delay(1);
+                }
+                auto passband  = Serial.read()- (int)'0';
+                dsp_fft_filt.high = (float)passband * 1000.0f;
+                dsp_fft_filt.updated_at = 0;
+                break;
+            }
+            case 'd': {
+                switch (demod_mode) {
+                    case DEMOD_USB:
+                        Serial.println("DEMOD SET TO LSB\n");
+                        demod_mode = DEMOD_LSB;
+                    break;
+                    case DEMOD_LSB:
+                        Serial.println("DEMOD SET TO NONE\n");
+                        demod_mode = DEMOD_NONE;
+                    break;
+                    case DEMOD_NONE:
+                        Serial.println("DEMOD SET TO USB\n");
+                        demod_mode = DEMOD_USB;
+                    break;
+                } 
+            }
         }
     }
 
@@ -363,7 +386,8 @@ void radio_loop()
         auto pk_q = get_peak_q();
         clear_peak();
 
-        Serial.printf("Time1 %lld time2 = %lld period %lld\n", last_time2 -last_time1, last_time3 - last_time2, last_time9);
+        Serial.printf("input:%lld processing:%lld output:%lld period %lld\n", last_time2 -last_time1, last_time3 - last_time2, last_time4 - last_time3,  last_time9);
+
         Serial.printf("PEAK VALUES Q= %5.3f I = %5.3f\n", pk_q, pk_i);
         loop_cnt_1hz = 0;
         //hmi_show_keys();
