@@ -208,7 +208,12 @@ void ES8388_SetupCodec() {
     // ADC setup
     ES8388_WriteReg(ES8388_ADCCONTROL2, 0x00);  // Select inputs Lin1/Rin1
     ES8388_WriteReg(ES8388_ADCCONTROL1, 0x88);  // input gain for ADC (24 dB)
-    ES8388_WriteReg(ES8388_ADCCONTROL4, 0x0C);  // DATSEL, ADCLRP, ADCWL, ADCFORMAT (16 bits)
+    
+    // ES8388_WriteReg(ES8388_ADCCONTROL4, 0x0C);  // DATSEL, ADCLRP, ADCWL, ADCFORMAT (16 bits)
+    // SWAP LEFT RIGHT (DATSEL) so PC soundcard matches with default IQ files
+    ES8388_WriteReg(ES8388_ADCCONTROL4, 0xCC);  // DATSEL, ADCLRP, ADCWL, ADCFORMAT (16 bits)
+
+
     ES8388_WriteReg(ES8388_ADCCONTROL5, 0x02);  // ADCFsMode , ADCFsRatio
 
     // Set ADC Digital Volume

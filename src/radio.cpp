@@ -15,12 +15,12 @@
 #include "push_button.h"
 #include "kiss_fft.h"
 
-bool mute;
 bool has_si = false;
-bool generate_tone = false;
-bool bypass_mode = false;
+static volatile bool mute = false;
+static volatile bool generate_tone = false;
+static volatile bool bypass_mode = false;
 //static DEMOD_MODE demod_mode = DEMOD_NONE;
-static volatile DEMOD_MODE demod_mode = DEMOD_USB;
+static volatile DEMOD_MODE demod_mode = DEMOD_LSB;
 
 static volatile uint32_t loop_cnt_1hz;
 static volatile int64_t last_time1;

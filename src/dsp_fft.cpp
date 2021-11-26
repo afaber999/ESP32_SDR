@@ -76,18 +76,20 @@ static void make_kaiser_window(int size, float* window, float beta)
 
 void tune_bpf_filter(float low, float high, float window_param) {
 
-    Serial.printf("High set to: low: %f high: %f %f %f \n", dsp_fft_filt.low, dsp_fft_filt.high,low, high );
+    // Serial.printf("High set to: low: %f high: %f %f %f \n", dsp_fft_filt.low, dsp_fft_filt.high,low, high );
 
     // borrow fft_buf2, has enough room to hold the entire window
     auto window = (float*)fft_buf2;
     make_kaiser_window(fft_filt_m, window, window_param);
-
 
     float fl = low;
     float fh = high;
     float fc = (fh - fl) / 2.0f;
     float ff = (fl + fh) * F_PI;
     int midpoint = fft_filt_m >> 1;
+
+    // make sure were using a clean buffer
+    memset(fft_buf1, 0, sizeof(fft_buf1));
 
     for (int i = 1; i <= fft_filt_m; i++)
     {
@@ -107,13 +109,14 @@ void tune_bpf_filter(float low, float high, float window_param) {
     }
 
     // Convert from time domain to frequency domain
-    // we can re-use buf2, since we don't need the window anymore
     kiss_fft(fft_cfg_fwd, fft_buf1, fft_filt_coeffs);
     
-    // only need the positive frequencies for the filter coeff (causal)
-    //memcpy(fft_filt_coeffs, fft_buf2, sizeof(fft_filt_coeffs));
-
 #ifdef DEBUG_FILTER
+    for (int n = 0; n < 200; n++) {
+        Serial.printf("#%d\t%.1f\n", n,
+            power2dB(fft_filt_coeffs[n].r * fft_filt_coeffs[n].r + fft_filt_coeffs[n].i * fft_filt_coeffs[n].i) );
+    }
+
     auto pf = fopen("c:\\temp\\window_mag4.txt", "w");
     for (int n = 0; n < fft_filt_n; n++) {
         fprintf(pf, "#%d\t%.1f\t%g\t%g\n", n,

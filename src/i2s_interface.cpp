@@ -36,12 +36,12 @@ bool i2s_read_buffer(int16_t* data)
 
 i2s_config_t i2s_configuration =
 {
-    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX), // | I2S_MODE_DAC_BUILT_IN
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
     .sample_rate = SAMPLE_RATE,
-    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, /* the DAC module will only take the 8bits from MSB */
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
     .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
-    .intr_alloc_flags = 0, // default interrupt priority
+    .intr_alloc_flags = 0,
     .dma_buf_count = DMA_BUFFERS,
     .dma_buf_len = DMA_SAMPLES,   // each buffer 2 x 2 x 1024 = 4k
     .use_apll = true,
